@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Oefentoets Taalverzorging - 40 Vragen</title>
+    <title>Oefentoets Taalverzorging - 100 Vragen</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #f3f4f6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
@@ -55,7 +55,7 @@
 
             <div id="submit-area" class="hidden mt-8 p-8 bg-blue-50 rounded-xl border-2 border-blue-200 text-center shadow-inner">
                 <h3 class="text-2xl font-bold text-blue-900 mb-2">Goed gedaan!</h3>
-                <p class="text-blue-800 mb-6">Je hebt alle vragen doorlopen. Klik op de knop om je resultaten definitief in te leveren.</p>
+                <p class="text-blue-800 mb-6">Je hebt de 30 vragen doorlopen. Klik op de knop om je resultaten definitief in te leveren.</p>
                 <button id="final-submit-btn" class="bg-green-600 text-white px-10 py-4 rounded-xl hover:bg-green-700 font-bold text-xl shadow-lg transition-transform transform hover:scale-105">
                     Resultaten Definitief Inleveren
                 </button>
@@ -68,52 +68,139 @@
                 <div class="spinner"></div> Bezig met veilig verzenden naar de spreadsheet...
             </div>
             <p class="text-xl mb-6" id="final-score-text"></p>
-            <button onclick="location.reload()" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">Opnieuw proberen</button>
+            <button onclick="location.reload()" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">Nog een keer (nieuwe vragen)</button>
         </div>
     </div>
 
     <script>
-        // Gebruik je huidige actieve script URL
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzZhuEwPkor67-Eym2DK3AW2HO_rkQw72c2QR8VwHK9OlGCjay3rPM9a3NA9t1bubeG/exec"; 
 
-        const quizDataRaw = [
+        const database = [
+            // Categorie: Meervoud (20 vragen)
             { type: "mc", instr: "Meervoud", q: "In de dierentuin zagen we drie prachtige (giraffe).", options: ["giraffes", "girappen", "girafes", "giraf's"], correct: "giraffes", hint: "Kijk goed naar de laatste letter van het woord." },
-            { type: "mc", instr: "Werkwoordspelling", q: "De ober (schenken) de glazen vol met sap.", options: ["schenkt", "schenk", "schonkt", "geschenkt"], correct: "schenkt", hint: "Het onderwerp is 'de ober' (hij-vorm)." },
-            { type: "mc", instr: "Aanhalingstekens", q: "In welke zin staan de aanhalingstekens op de goede plek?", options: ["De leraar riep: \"Pak allemaal je boeken!\"", "\"De leraar riep:\" Pak allemaal je boeken!", "De leraar riep: Pak allemaal je \"boeken!\"", "De leraar \"riep\": Pak allemaal je boeken!"], correct: "De leraar riep: \"Pak allemaal je boeken!\"", hint: "Directe rede komt na de dubbele punt." },
-            { type: "mc", instr: "Meervoud", q: "Er liggen veel (taxi) te wachten bij het station.", options: ["taxi's", "taxis", "taxien", "taxies"], correct: "taxi's", hint: "Denk aan de regel voor woorden die op een klinker eindigen." },
-            { type: "mc", instr: "Bijvoeglijk naamwoord", q: "De koning zat op een (goud) troon.", options: ["gouden", "goude", "goud", "goudene"], correct: "gouden", hint: "Stoffelijk bijvoeglijk naamwoord." },
-            { type: "mc", instr: "Werkwoordspelling (VT)", q: "Vorige week (verhuizen) mijn beste vriend naar een andere stad.", options: ["verhuisde", "verhuiste", "verhuisden", "verhuist"], correct: "verhuisde", hint: "De stam eindigt op een z." },
-            { type: "mc", instr: "Verkleinwoord", q: "Kijk daar, een klein (konijn) in het gras!", options: ["konijntje", "konijntien", "konijnpje", "konijnje"], correct: "konijntje", hint: "Woorden op -n krijgen vaak -tje." },
-            { type: "mc", instr: "Werkwoordspelling (TT)", q: "(Antwoorden) jij de brief van je oma vandaag nog?", options: ["Antwoord", "Antwoordt", "Antwoordde", "Geantwoord"], correct: "Antwoord", hint: "Jij achter de persoonsvorm = geen -t." },
-            { type: "mc", instr: "Meervoud", q: "In de herfst vallen de (blad) van de bomen.", options: ["bladeren", "bladen", "bladers", "blads"], correct: "bladeren", hint: "Onregelmatig meervoud." },
-            { type: "mc", instr: "Hoofdletters", q: "In welke zin zijn de hoofdletters goed gebruikt?", options: ["Op dinsdag vliegen we van Schiphol naar Londen.", "Op Dinsdag vliegen we van schiphol naar londen.", "Op dinsdag vliegen we van schiphol naar Londen.", "Op Dinsdag vliegen we van Schiphol naar Londen."], correct: "Op dinsdag vliegen we van Schiphol naar Londen.", hint: "Plaatsnamen wel, dagen niet." },
-            { type: "mc", instr: "Voltooid deelwoord", q: "De politie heeft de dief gisteren (pakken).", options: ["gepakt", "gepakkerd", "gepakted", "pakte"], correct: "gepakt", hint: "Gebruik 't kofschip x." },
-            { type: "mc", instr: "Meervoud", q: "Onze buren hebben twee grote (hond).", options: ["honden", "hondt", "hondes", "honds"], correct: "honden", hint: "Standaard meervoud op -en." },
-            { type: "mc", instr: "Bijvoeglijk naamwoord", q: "Zij draagt een (wol) sjaal tegen de kou.", options: ["wollen", "wolle", "wol", "wollige"], correct: "wollen", hint: "De sjaal is gemaakt van wol." },
-            { type: "mc", instr: "Verkleinwoord", q: "Ik drink graag uit dit kleine (glas).", options: ["glaasje", "glastje", "glasje", "glassie"], correct: "glaasje", hint: "Klinker wordt lang." },
-            { type: "mc", instr: "Werkwoordspelling (VT)", q: "De kinderen (spelen) de hele middag buiten in de zon.", options: ["speelden", "speelten", "speelde", "gespeeld"], correct: "speelden", hint: "Onderwerp is meervoud." },
-            { type: "mc", instr: "Meervoud", q: "In de stad staan veel moderne (gebouw).", options: ["gebouwen", "gebouws", "gebouwtjes", "gebouwden"], correct: "gebouwen", hint: "Meervoud op -en." },
-            { type: "mc", instr: "Spelling", q: "In welke zin is het dikgedrukte woord goed gespeld?", options: ["Ik vind het **'s ochtends** lastig.", "Ik vind het **sochtends** lastig.", "Ik vind het **s'ochtends** lastig.", "Ik vind het **s ochtends** lastig."], correct: "Ik vind het **'s ochtends** lastig.", hint: "Apostrof voor de s." },
-            { type: "mc", instr: "Werkwoordspelling (VT)", q: "De leraar (leggen) de moeilijke som nog een keer uit.", options: ["legde", "legte", "leidde", "gelegd"], correct: "legde", hint: "G zit niet in 't kofschip." },
+            { type: "mc", instr: "Meervoud", q: "Er liggen veel (taxi) te wachten bij het station.", options: ["taxi's", "taxis", "taxien", "taxies"], correct: "taxi's", hint: "Klinker regel bij -i." },
             { type: "mc", instr: "Meervoud", q: "De kok snijdt drie (paprika) voor de soep.", options: ["paprika's", "paprikas", "paprikaen", "paprikaes"], correct: "paprika's", hint: "Klinker regel bij -a." },
-            { type: "mc", instr: "Werkwoordspelling (TT)", q: "(Vinden) jij de weg naar het nieuwe station?", options: ["Vind", "Vindt", "Vond", "Gevonden"], correct: "Vind", hint: "Jij achter het werkwoord." },
-            { type: "mc", instr: "Hoofdletters", q: "Welk woord moet met een hoofdletter: 'volgende week gaan we naar de efteling in kaatsheuvel.'", options: ["Efteling en Kaatsheuvel", "Volgende en Week", "Alleen Efteling", "Geen enkel woord"], correct: "Efteling en Kaatsheuvel", hint: "Namen van plaatsen en parken." },
+            { type: "mc", instr: "Meervoud", q: "In de herfst vallen de (blad) van de bomen.", options: ["bladeren", "bladen", "bladers", "blads"], correct: "bladeren", hint: "Onregelmatig meervoud." },
+            { type: "mc", instr: "Meervoud", q: "Onze buren hebben twee grote (hond).", options: ["honden", "hondt", "hondes", "honds"], correct: "honden", hint: "Standaard meervoud op -en." },
+            { type: "mc", instr: "Meervoud", q: "In de stad staan veel moderne (gebouw).", options: ["gebouwen", "gebouws", "gebouwtjes", "gebouwden"], correct: "gebouwen", hint: "Meervoud op -en." },
             { type: "mc", instr: "Meervoud", q: "In de vijver zwemmen veel (vis).", options: ["vissen", "visen", "viss", "visjes"], correct: "vissen", hint: "Verdubbel de medeklinker." },
-            { type: "mc", instr: "Werkwoordspelling (VT)", q: "Wij (fietsen) gisteren helemaal naar het strand.", options: ["fietsten", "fietsden", "fietste", "gefietst"], correct: "fietsten", hint: "S zit in 't kofschip." },
-            { type: "mc", instr: "Verkleinwoord", q: "Wat een schattig (lam) loopt daar in de wei!", options: ["lammetje", "lamtje", "lampje", "lametje"], correct: "lammetje", hint: "Medeklinker verdubbelen." },
-            { type: "mc", instr: "Bijvoeglijk naamwoord", q: "De ridder droeg een (ijzer) harnas.", options: ["ijzeren", "ijzere", "ijzer", "ijzerig"], correct: "ijzeren", hint: "Materiaal is ijzer." },
-            { type: "mc", instr: "Aanhalingstekens", q: "In welke zin staan de aanhalingstekens op de goede plek?", options: ["Mama vroeg: \"Wie wil er een ijsje?\"", "\"Mama vroeg: Wie wil er een ijsje?\"", "Mama vroeg: Wie wil er een \"ijsje?\"", "Mama \"vroeg\": Wie wil er een ijsje?"], correct: "Mama vroeg: \"Wie wil er een ijsje?\"", hint: "Letterlijke tekst tussen tekens." },
-            { type: "mc", instr: "Meervoud", q: "De vlieger heeft twee grote (vleugel).", options: ["vleugels", "vleugelen", "vleugel's", "vleugeles"], correct: "vleugels", hint: "Kies tussen -s of -en." },
-            { type: "mc", instr: "Werkwoordspelling (TT)", q: "Het meisje (beloven) plechtig dat ze op tijd zal zijn.", options: ["belooft", "beloofd", "belovt", "beloven"], correct: "belooft", hint: "Stam is beloof + t." },
-            { type: "mc", instr: "Verkleinwoord", q: "Er drijft een klein (boot) in de sloot.", options: ["bootje", "boottje", "bootje-tje", "bootpje"], correct: "bootje", hint: "Woord op -t krijgt -je." },
-            { type: "mc", instr: "Grammatica", q: "Welke zin is grammaticaal juist?", options: ["Ik heb mijn tas op de tafel gelegd.", "Ik heb mijn tas op de tafel geleid.", "Ik heb mijn tas op de tafel gelecht.", "Ik heb mijn tas op de tafel legt"], correct: "Ik heb mijn tas op de tafel gelegd.", hint: "Voltooid deelwoord van leggen." }
+            { type: "mc", instr: "Meervoud", q: "De vlieger heeft twee grote (vleugel).", options: ["vleugels", "vleugelen", "vleugel's", "vleugeles"], correct: "vleugels", hint: "-s of -en?" },
+            { type: "mc", instr: "Meervoud", q: "De bakker bakt elke ochtend verse (brood).", options: ["broden", "broodt", "broods", "broodes"], correct: "broden", hint: "Lange klank behouden." },
+            { type: "mc", instr: "Meervoud", q: "Er staan twee (radio) in de woonkamer.", options: ["radio's", "radios", "radioen", "radio-s"], correct: "radio's", hint: "Klinker regel bij -o." },
+            { type: "mc", instr: "Meervoud", q: "Zij dragen allebei witte (pyjama).", options: ["pyjama's", "pyjamas", "pyjamaen", "pyjama-s"], correct: "pyjama's", hint: "Klinker regel bij -a." },
+            { type: "mc", instr: "Meervoud", q: "Er vliegen drie (baby) door de kamer (muggen).", options: ["baby's", "babies", "babys", "baby-s"], correct: "baby's", hint: "Klinker regel bij -y." },
+            { type: "mc", instr: "Meervoud", q: "De boer heeft tien (koe).", options: ["koeien", "koes", "koeen", "koetjes"], correct: "koeien", hint: "Onregelmatig meervoud." },
+            { type: "mc", instr: "Meervoud", q: "Op de boerderij staan drie (kalf).", options: ["kalveren", "kalven", "kalfen", "kalfs"], correct: "kalveren", hint: "Onregelmatig meervoud." },
+            { type: "mc", instr: "Meervoud", q: "In het museum hangen mooie (schilderij).", options: ["schilderijen", "schilderijs", "schilderijes", "schilderijden"], correct: "schilderijen", hint: "Standaard -en." },
+            { type: "mc", instr: "Meervoud", q: "De bomen hebben lange (wortel).", options: ["wortels", "wortelen", "worteltjes", "worteles"], correct: "wortels", hint: "Meestal -s bij -el." },
+            { type: "mc", instr: "Meervoud", q: "Er liggen vier (ei) in het nest.", options: ["eieren", "eien", "eis", "eijeren"], correct: "eieren", hint: "Onregelmatig meervoud." },
+            { type: "mc", instr: "Meervoud", q: "Zij hebben twee (kind).", options: ["kinderen", "kinden", "kinds", "kinders"], correct: "kinderen", hint: "Onregelmatig meervoud." },
+            { type: "mc", instr: "Meervoud", q: "In de zee zwemmen veel (haai).", options: ["haaien", "haaien", "haais", "haaies"], correct: "haaien", hint: "Standaard -en." },
+            { type: "mc", instr: "Meervoud", q: "Er staan veel (auto) in de file.", options: ["auto's", "autos", "autoen", "auto-s"], correct: "auto's", hint: "Klinker regel bij -o." },
+
+            // Categorie: Werkwoordspelling (30 vragen)
+            { type: "mc", instr: "Werkwoordspelling", q: "De ober (schenken) de glazen vol met sap.", options: ["schenkt", "schenk", "schonkt", "geschenkt"], correct: "schenkt", hint: "Stam + t." },
+            { type: "mc", instr: "Werkwoordspelling (VT)", q: "Vorige week (verhuizen) mijn beste vriend naar een andere stad.", options: ["verhuisde", "verhuiste", "verhuisden", "verhuist"], correct: "verhuisde", hint: "Stam op z." },
+            { type: "mc", instr: "Werkwoordspelling (TT)", q: "(Antwoorden) jij de brief van je oma vandaag nog?", options: ["Antwoord", "Antwoordt", "Antwoordde", "Geantwoord"], correct: "Antwoord", hint: "Jij achter de persoonsvorm." },
+            { type: "mc", instr: "Voltooid deelwoord", q: "De politie heeft de dief gisteren (pakken).", options: ["gepakt", "gepakkerd", "gepakted", "pakte"], correct: "gepakt", hint: "K-ofschip." },
+            { type: "mc", instr: "Werkwoordspelling (VT)", q: "De kinderen (spelen) de hele middag buiten in de zon.", options: ["speelden", "speelten", "speelde", "gespeeld"], correct: "speelden", hint: "L-is geen kofschip." },
+            { type: "mc", instr: "Werkwoordspelling (VT)", q: "De leraar (leggen) de moeilijke som nog een keer uit.", options: ["legde", "legte", "leidde", "gelegd"], correct: "legde", hint: "G-is geen kofschip." },
+            { type: "mc", instr: "Werkwoordspelling (TT)", q: "(Vinden) jij de weg naar het nieuwe station?", options: ["Vind", "Vindt", "Vond", "Gevonden"], correct: "Vind", hint: "Jij achter de persoonsvorm." },
+            { type: "mc", instr: "Werkwoordspelling (VT)", q: "Wij (fietsen) gisteren helemaal naar het strand.", options: ["fietsten", "fietsden", "fietste", "gefietst"], correct: "fietsten", hint: "S-is wel kofschip." },
+            { type: "mc", instr: "Werkwoordspelling (TT)", q: "Het meisje (beloven) plechtig dat ze op tijd zal zijn.", options: ["belooft", "beloofd", "belovt", "beloven"], correct: "belooft", hint: "Zij-vorm." },
+            { type: "mc", instr: "Werkwoordspelling (VT)", q: "De hond (blaffen) de hele nacht naar de maan.", options: ["blafte", "blafde", "blaften", "geblaft"], correct: "blafte", hint: "F-is kofschip." },
+            { type: "mc", instr: "Werkwoordspelling (TT)", q: "De zon (schijnen) vandaag erg fel.", options: ["schijnt", "schijn", "schijnde", "geschijnd"], correct: "schijnt", hint: "Stam + t." },
+            { type: "mc", instr: "Werkwoordspelling (TT)", q: "(Worden) jij later ook piloot?", options: ["Word", "Wordt", "Werd", "Gewordt"], correct: "Word", hint: "Jij achter persoonsvorm." },
+            { type: "mc", instr: "Werkwoordspelling (TT)", q: "Mijn vader (worden) morgen vijftig jaar.", options: ["wordt", "word", "werd", "worden"], correct: "wordt", hint: "Stam + t." },
+            { type: "mc", instr: "Werkwoordspelling (VT)", q: "Ik (branden) gisteren mijn vingers aan de oven.", options: ["brandde", "brande", "brandten", "gebrand"], correct: "brandde", hint: "Stam op d + de." },
+            { type: "mc", instr: "Werkwoordspelling (TT)", q: "Wie (verhuizen) er naar dat nieuwe huis?", options: ["verhuist", "verhuisd", "verhuis", "verhuizen"], correct: "verhuist", hint: "Wie-vorm is stam + t." },
+            { type: "mc", instr: "Werkwoordspelling (VT)", q: "De baby (huilen) de hele weg in de auto.", options: ["huilde", "huilte", "huilden", "gehuild"], correct: "huilde", hint: "L-geen kofschip." },
+            { type: "mc", instr: "Werkwoordspelling (TT)", q: "De trainer (stoppen) met de training.", options: ["stopt", "stop", "stopte", "gestopt"], correct: "stopt", hint: "Stam + t." },
+            { type: "mc", instr: "Werkwoordspelling (VT)", q: "De wind (waaien) hard over het land.", options: ["waaide", "waaite", "waaiden", "gewaaid"], correct: "waaide", hint: "I-geen kofschip." },
+            { type: "mc", instr: "Voltooid deelwoord", q: "Heb jij je huiswerk al (maken)?", options: ["gemaakt", "gemaakd", "maakte", "gemakerd"], correct: "gemaakt", hint: "K-is kofschip." },
+            { type: "mc", instr: "Voltooid deelwoord", q: "Zij hebben de hele middag (dansen).", options: ["gedanst", "gedansd", "dansten", "gedansen"], correct: "gedanst", hint: "S-is kofschip." },
+            { type: "mc", instr: "Werkwoordspelling (TT)", q: "(Kennen) jij die jongen met die rode pet?", options: ["Ken", "Kent", "Kende", "Gekend"], correct: "Ken", hint: "Jij achter persoonsvorm." },
+            { type: "mc", instr: "Werkwoordspelling (VT)", q: "De dief (vluchten) door het open raam.", options: ["vluchtte", "vluchted", "vluchte", "gevlucht"], correct: "vluchtte", hint: "Stam op t + te." },
+            { type: "mc", instr: "Werkwoordspelling (TT)", q: "Mijn oma (bakken) de lekkerste taarten.", options: ["bakt", "bak", "bakte", "gebakken"], correct: "bakt", hint: "Stam + t." },
+            { type: "mc", instr: "Werkwoordspelling (VT)", q: "Wij (koken) gisteren pasta met saus.", options: ["kookten", "kookden", "kookte", "gekookt"], correct: "kookten", hint: "K-is kofschip." },
+            { type: "mc", instr: "Werkwoordspelling (VT)", q: "Zij (antwoorden) niet op mijn vraag.", options: ["antwoordde", "antwoorde", "antwoordden", "geantwoord"], correct: "antwoordde", hint: "Stam op d + de." },
+            { type: "mc", instr: "Werkwoordspelling (TT)", q: "De trein (rijden) op tijd weg.", options: ["rijdt", "rijd", "reed", "gereden"], correct: "rijdt", hint: "Stam + t." },
+            { type: "mc", instr: "Werkwoordspelling (VT)", q: "Ik (geloven) mijn eigen ogen niet.", options: ["geloofde", "geloofte", "geloofden", "gelooft"], correct: "geloofde", hint: "Stam op v." },
+            { type: "mc", instr: "Werkwoordspelling (TT)", q: "Die film (boeien) mij totaal niet.", options: ["boeit", "boeid", "boeide", "geboeid"], correct: "boeit", hint: "Stam + t." },
+            { type: "mc", instr: "Werkwoordspelling (TT)", q: "(Lopen) jij even mee naar de winkel?", options: ["Loop", "Loopt", "Liep", "Gelopen"], correct: "Loop", hint: "Jij achter persoonsvorm." },
+            { type: "mc", instr: "Voltooid deelwoord", q: "De brandweer heeft het vuur (blussen).", options: ["geblust", "geblusd", "bluste", "geblussen"], correct: "geblust", hint: "S-is kofschip." },
+
+            // Categorie: Hoofdletters & Leestekens (15 vragen)
+            { type: "mc", instr: "Hoofdletters", q: "In welke zin zijn de hoofdletters goed gebruikt?", options: ["Op dinsdag vliegen we van Schiphol naar Londen.", "Op Dinsdag vliegen we van schiphol naar londen.", "Op dinsdag vliegen we van schiphol naar Londen.", "Op Dinsdag vliegen we van Schiphol naar Londen."], correct: "Op dinsdag vliegen we van Schiphol naar Londen.", hint: "Plaatsen wel, dagen niet." },
+            { type: "mc", instr: "Aanhalingstekens", q: "In welke zin staan de aanhalingstekens op de goede plek?", options: ["De leraar riep: \"Pak allemaal je boeken!\"", "\"De leraar riep:\" Pak allemaal je boeken!", "De leraar riep: Pak allemaal je \"boeken!\"", "De leraar \"riep\": Pak allemaal je boeken!"], correct: "De leraar riep: \"Pak allemaal je boeken!\"", hint: "Directe rede." },
+            { type: "mc", instr: "Hoofdletters", q: "Welk woord moet met een hoofdletter: 'volgende week gaan we naar de efteling in kaatsheuvel.'", options: ["Efteling en Kaatsheuvel", "Volgende en Week", "Alleen Efteling", "Geen enkel woord"], correct: "Efteling en Kaatsheuvel", hint: "Namen van parken en steden." },
+            { type: "mc", instr: "Aanhalingstekens", q: "In welke zin staan de aanhalingstekens op de goede plek?", options: ["Mama vroeg: \"Wie wil er een ijsje?\"", "\"Mama vroeg: Wie wil er een ijsje?\"", "Mama vroeg: Wie wil er een \"ijsje?\"", "Mama \"vroeg\": Wie wil er een ijsje?"], correct: "Mama vroeg: \"Wie wil er een ijsje?\"", hint: "Na de dubbele punt." },
+            { type: "mc", instr: "Hoofdletters", q: "Welke zin is correct geschreven?", options: ["Mijn oom komt uit Parijs en spreekt Frans.", "Mijn Oom komt uit parijs en spreekt frans.", "Mijn oom komt uit Parijs en spreekt frans.", "Mijn oom komt uit parijs en spreekt Frans."], correct: "Mijn oom komt uit Parijs en spreekt Frans.", hint: "Steden en talen met hoofdletter." },
+            { type: "mc", instr: "Leestekens", q: "Waar moet de komma staan? 'Als het regent gaan we naar binnen.'", options: ["Achter 'regent'", "Achter 'Als'", "Achter 'we'", "Er hoort geen komma"], correct: "Achter 'regent'", hint: "Tussen twee persoonsvormen." },
+            { type: "mc", instr: "Hoofdletters", q: "Welk woord schrijf je ALTIJD met een hoofdletter?", options: ["Nederlands", "Maandag", "Zomer", "Tafel"], correct: "Nederlands", hint: "Talen en nationaliteiten." },
+            { type: "mc", instr: "Leestekens", q: "Wat is de juiste afsluiting: 'Hoe laat begint de film...'", options: ["?", "!", ".", ","], correct: "?", hint: "Het is een vraag." },
+            { type: "mc", instr: "Hoofdletters", q: "Welke zin is juist?", options: ["Jan woont in de Kerkstraat.", "Jan woont in de kerkstraat.", "Jan Woont In De Kerkstraat.", "jan woont in de Kerkstraat."], correct: "Jan woont in de Kerkstraat.", hint: "Straatnamen met hoofdletter." },
+            { type: "mc", instr: "Leestekens", q: "Wat moet er achter 'vroeg' in de zin: 'Hij vroeg of ik mee ging.'", options: ["Helemaal niets", "Een komma", "Een dubbele punt", "Aanhalingstekens"], correct: "Helemaal niets", hint: "Het is geen directe rede." },
+            { type: "mc", instr: "Hoofdletters", q: "Wat is correct?", options: ["Ik ben op 5 mei jarig.", "Ik ben op 5 Mei jarig.", "Ik ben op 5 MEI jarig.", "ik ben op 5 mei jarig."], correct: "Ik ben op 5 mei jarig.", hint: "Maanden met kleine letter." },
+            { type: "mc", instr: "Hoofdletters", q: "Welke taal schrijf je met een hoofdletter?", options: ["Engels", "rekenen", "gym", "tekenen"], correct: "Engels", hint: "Talen zijn eigennamen." },
+            { type: "mc", instr: "Leestekens", q: "Welke zin is goed?", options: ["Gatver, wat een vieze soep!", "Gatver wat een vieze soep?", "Gatver: wat een vieze soep.", "Gatver! wat een vieze soep"], correct: "Gatver, wat een vieze soep!", hint: "Uitroep." },
+            { type: "mc", instr: "Hoofdletters", q: "Schrijf je de naam van een godsdienst met een hoofdletter?", options: ["Nee (bijv. de islam)", "Ja (bijv. de Islam)", "Alleen aan het begin van de zin", "Altijd"], correct: "Nee (bijv. de islam)", hint: "Godsdiensten zijn kleine letters." },
+            { type: "mc", instr: "Hoofdletters", q: "Wat is juist?", options: ["de Eerste Wereldoorlog", "de eerste wereldoorlog", "de Eerste wereldoorlog", "De eerste Wereldoorlog"], correct: "de Eerste Wereldoorlog", hint: "Historische gebeurtenissen." },
+
+            // Categorie: Bijvoeglijk naamwoord & Verkleinwoorden (20 vragen)
+            { type: "mc", instr: "Bijvoeglijk naamwoord", q: "De koning zat op een (goud) troon.", options: ["gouden", "goude", "goud", "goudene"], correct: "gouden", hint: "Stoffelijk." },
+            { type: "mc", instr: "Verkleinwoord", q: "Kijk daar, een klein (konijn) in het gras!", options: ["konijntje", "konijntien", "konijnpje", "konijnje"], correct: "konijntje", hint: "Op -n volgt -tje." },
+            { type: "mc", instr: "Bijvoeglijk naamwoord", q: "Zij draagt een (wol) sjaal tegen de kou.", options: ["wollen", "wolle", "wol", "wollige"], correct: "wollen", hint: "Stoffelijk." },
+            { type: "mc", instr: "Verkleinwoord", q: "Ik drink graag uit dit kleine (glas).", options: ["glaasje", "glastje", "glasje", "glassie"], correct: "glaasje", hint: "Klinker wordt lang." },
+            { type: "mc", instr: "Verkleinwoord", q: "Wat een schattig (lam) loopt daar in de wei!", options: ["lammetje", "lamtje", "lampje", "lametje"], correct: "lammetje", hint: "Dubbele medeklinker." },
+            { type: "mc", instr: "Bijvoeglijk naamwoord", q: "De ridder droeg een (ijzer) harnas.", options: ["ijzeren", "ijzere", "ijzer", "ijzerig"], correct: "ijzeren", hint: "Stoffelijk." },
+            { type: "mc", instr: "Verkleinwoord", q: "Er drijft een klein (boot) in de sloot.", options: ["bootje", "boottje", "bootje-tje", "bootpje"], correct: "bootje", hint: "Op -t volgt -je." },
+            { type: "mc", instr: "Bijvoeglijk naamwoord", q: "De tafel heeft een (hout) blad.", options: ["houten", "houte", "houts", "houtene"], correct: "houten", hint: "Stoffelijk." },
+            { type: "mc", instr: "Verkleinwoord", q: "Op de muur zit een klein (vlieg).", options: ["vliegje", "vliegtje", "vliegetje", "vliegie"], correct: "vliegje", hint: "Standaard -je." },
+            { type: "mc", instr: "Bijvoeglijk naamwoord", q: "Ik heb een (zilver) ketting gekregen.", options: ["zilveren", "zilvere", "zilver", "zilverene"], correct: "zilveren", hint: "Stoffelijk." },
+            { type: "mc", instr: "Verkleinwoord", q: "Dat kleine (huis) is erg oud.", options: ["huisje", "huistje", "huisetje", "huissie"], correct: "huisje", hint: "Standaard -je." },
+            { type: "mc", instr: "Verkleinwoord", q: "Er staat een klein (boom) in de tuin.", options: ["boompje", "boomtje", "boomje", "boometje"], correct: "boompje", hint: "Op -m volgt -pje." },
+            { type: "mc", instr: "Verkleinwoord", q: "Ik heb een klein (ring) aan mijn vinger.", options: ["ringetje", "ringtje", "ringpje", "ringje"], correct: "ringetje", hint: "Op -ng volgt -etje." },
+            { type: "mc", instr: "Verkleinwoord", q: "Kijk, een klein (ster) aan de hemel.", options: ["sterretje", "stertje", "sterpje", "sterje"], correct: "sterretje", hint: "Dubbele medeklinker." },
+            { type: "mc", instr: "Bijvoeglijk naamwoord", q: "De (plastic) bekers zijn op.", options: ["plastic", "plasticen", "plastieken", "plasticce"], correct: "plastic", hint: "Uitzondering bij stoffelijk." },
+            { type: "mc", instr: "Verkleinwoord", q: "Ik kreeg een klein (kus) van oma.", options: ["kusje", "kustje", "kusetje", "kussentje"], correct: "kusje", hint: "Standaard -je." },
+            { type: "mc", instr: "Bijvoeglijk naamwoord", q: "Hij draagt een (leer) jas.", options: ["leren", "leer", "lere", "leerene"], correct: "leren", hint: "Stoffelijk." },
+            { type: "mc", instr: "Verkleinwoord", q: "Mijn zusje heeft een klein (mond).", options: ["mondje", "mondtje", "mondetje", "montje"], correct: "mondje", hint: "Op -d volgt -je." },
+            { type: "mc", instr: "Verkleinwoord", q: "Wat een klein (ei) is dit.", options: ["eitje", "eiertje", "eietje", "eijetje"], correct: "eitje", hint: "Onregelmatig." },
+            { type: "mc", instr: "Verkleinwoord", q: "Heb je dat kleine (spel) al gezien?", options: ["spelletje", "speltje", "spelpje", "speletje"], correct: "spelletje", hint: "Dubbele medeklinker." },
+
+            // Categorie: Overige Spelling (15 vragen)
+            { type: "mc", instr: "Spelling", q: "In welke zin is het dikgedrukte woord goed gespeld?", options: ["Ik vind het <b>'s ochtends</b> lastig.", "Ik vind het <b>sochtends</b> lastig.", "Ik vind het <b>s'ochtends</b> lastig.", "Ik vind het <b>s ochtends</b> lastig."], correct: "Ik vind het <b>'s ochtends</b> lastig.", hint: "Apostrof voor de s." },
+            { type: "mc", instr: "Grammatica", q: "Welke zin is grammaticaal juist?", options: ["Ik heb mijn tas op de tafel gelegd.", "Ik heb mijn tas op de tafel geleid.", "Ik heb mijn tas op de tafel gelecht.", "Ik heb mijn tas op de tafel legt"], correct: "Ik heb mijn tas op de tafel gelegd.", hint: "Leggen - gelegd." },
+            { type: "mc", instr: "Spelling", q: "Wat is de juiste spelling voor het cijfer 88?", options: ["achtentachtig", "acht en tachtig", "acht-en-tachtig", "achttentachtig"], correct: "achtentachtig", hint: "Alles aan elkaar." },
+            { type: "mc", instr: "Spelling", q: "Welk woord is goed gespeld?", options: ["onmiddellijk", "onmidellijk", "onmiddelijk", "onmidelijk"], correct: "onmiddellijk", hint: "Dubbel m, dubbel l." },
+            { type: "mc", instr: "Spelling", q: "Wat is juist?", options: ["café", "cafe", "caffé", "cafë"], correct: "café", hint: "Accent aigu." },
+            { type: "mc", instr: "Spelling", q: "Hoe schrijf je dit woord?", options: ["cadeau", "kado", "kadoe", "cadeau's"], correct: "cadeau", hint: "Frans leenwoord." },
+            { type: "mc", instr: "Spelling", q: "Welk woord is correct?", options: ["applaus", "aplaus", "applauss", "applausse"], correct: "applaus", hint: "Dubbel p." },
+            { type: "mc", instr: "Spelling", q: "Kies de juiste spelling:", options: ["enigszins", "enigsins", "enigzins", "enichszins"], correct: "enigszins", hint: "Met sz." },
+            { type: "mc", instr: "Spelling", q: "Wat is goed gespeld?", options: ["pannenkoek", "pannekoek", "pannenkoeken", "pankoke"], correct: "pannenkoek", hint: "Tussen-n regel." },
+            { type: "mc", instr: "Spelling", q: "Hoe schrijf je het meervoud van 'perzik'?", options: ["perziken", "perzikken", "perziks", "perziken"], correct: "perziken", hint: "Geen dubbel k (klemtoon)." },
+            { type: "mc", instr: "Spelling", q: "Wat is de juiste spelling?", options: ["beide", "beiden", "bijde", "bijden"], correct: "beide", hint: "Zonder n bij zaken." },
+            { type: "mc", instr: "Spelling", q: "Wat is juist?", options: ["ten alle tijden", "te allen tijde", "ten alle tijde", "te alle tijden"], correct: "te allen tijde", hint: "Oude naamval." },
+            { type: "mc", instr: "Spelling", q: "Hoe schrijf je dit woord?", options: ["bureau", "buro", "bureu", "burea"], correct: "bureau", hint: "Frans leenwoord." },
+            { type: "mc", instr: "Spelling", q: "Welk woord is juist?", options: ["elektriciteit", "electriciteit", "elektriciteit", "electrisiteit"], correct: "elektriciteit", hint: "Met k en c." },
+            { type: "mc", instr: "Spelling", q: "Kies de goede vorm:", options: ["verrassing", "verasing", "verassing", "verrasching"], correct: "verrassing", hint: "Dubbel r, dubbel s." }
         ];
 
+        let currentQuestions = [];
         let currentScore = 0;
         let answeredCount = 0;
         let studentName = "";
         let errorDetails = [];
         let attempts = {};
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
 
         function startQuiz() {
             const nameInput = document.getElementById('student-name');
@@ -125,22 +212,34 @@
             document.getElementById('display-name').innerText = studentName;
             document.getElementById('login-container').classList.add('hidden');
             document.getElementById('quiz-ui').classList.remove('hidden');
+            
+            // 30 willekeurige vragen kiezen
+            const shuffledDb = shuffleArray([...database]);
+            currentQuestions = shuffledDb.slice(0, 30);
+            
             initQuiz();
         }
 
         function initQuiz() {
             const container = document.getElementById('quiz-container');
-            quizDataRaw.forEach((item, index) => {
+            container.innerHTML = '';
+            
+            currentQuestions.forEach((item, index) => {
                 attempts[index] = 0;
                 const card = document.createElement('div');
                 card.className = 'card p-6 mb-6 border-l-4 border-gray-200';
                 card.id = `card-${index}`;
                 
+                // Antwoorden husselen
+                const shuffledOptions = shuffleArray([...item.options]);
+                
                 card.innerHTML = `
                     <div class="instruction">${item.instr} (Vraag ${index + 1})</div>
                     <p class="font-bold text-lg mb-4">${item.q}</p>
                     <div class="grid grid-cols-1 gap-3" id="q${index}-inputs">
-                        ${item.options.map((opt, i) => `<button onclick="checkMC(${index}, ${i})" id="q${index}-btn${i}" class="option-btn">${opt}</button>`).join('')}
+                        ${shuffledOptions.map((opt, i) => `
+                            <button onclick="checkMC(${index}, '${opt.replace(/'/g, "\\'")}')" class="option-btn">${opt}</button>
+                        `).join('')}
                     </div>
                     <div id="q${index}-hint" class="hint-text hidden"><strong>Tip:</strong> ${item.hint}</div>
                 `;
@@ -148,29 +247,33 @@
             });
         }
 
-        window.checkMC = (qIdx, oIdx) => {
+        window.checkMC = (qIdx, chosenAnswer) => {
             const container = document.getElementById(`q${qIdx}-inputs`);
             if (container.classList.contains('finalized')) return;
 
-            const item = quizDataRaw[qIdx];
-            const chosenAnswer = item.options[oIdx];
+            const item = currentQuestions[qIdx];
             const isCorrect = chosenAnswer === item.correct;
             const card = document.getElementById(`card-${qIdx}`);
             const hint = document.getElementById(`q${qIdx}-hint`);
             
             attempts[qIdx]++;
 
+            const buttons = container.querySelectorAll('button');
+            let clickedBtn;
+            buttons.forEach(btn => {
+                if(btn.innerText === chosenAnswer) clickedBtn = btn;
+            });
+
             if (!isCorrect) {
-                // Registreer de fout direct bij de eerste poging
                 if (attempts[qIdx] === 1) {
-                    errorDetails.push(`Vraag ${qIdx + 1}: Gekozen "${chosenAnswer}" (Correct was "${item.correct}")`);
+                    // Registreer fout op de achtergrond
+                    errorDetails.push(`Vraag ${qIdx + 1} (${item.instr}): Gekozen "${chosenAnswer}" (Correct was "${item.correct}")`);
                     card.classList.replace('border-gray-200', 'border-red-400');
-                    document.getElementById(`q${qIdx}-btn${oIdx}`).classList.add('incorrect');
+                    clickedBtn.classList.add('incorrect');
                     hint.classList.remove('hidden');
-                    return; // Geef de leerling een tweede kans
+                    return; 
                 }
             } else {
-                // Alleen punten als het in 1x goed was
                 if (attempts[qIdx] === 1) {
                     currentScore++;
                 }
@@ -178,26 +281,30 @@
                 card.classList.replace('border-red-400', 'border-green-400');
             }
 
-            // Vraag afsluiten
+            // Vraag definitief afsluiten
             container.classList.add('finalized');
             hint.classList.add('hidden');
 
-            const buttons = container.querySelectorAll('button');
-            buttons.forEach(btn => btn.classList.add('disabled'));
-            const correctIdx = item.options.indexOf(item.correct);
-            document.getElementById(`q${qIdx}-btn${correctIdx}`).className = 'option-btn correct disabled';
-            if (!isCorrect) document.getElementById(`q${qIdx}-btn${oIdx}`).classList.add('incorrect');
+            buttons.forEach(btn => {
+                btn.classList.add('disabled');
+                if (btn.innerText === item.correct) {
+                    btn.className = 'option-btn correct disabled';
+                } else if (btn.innerText === chosenAnswer && !isCorrect) {
+                    btn.classList.add('incorrect');
+                }
+            });
 
             answeredCount++;
             updateProgress();
         };
 
         function updateProgress() {
-            const percent = (answeredCount / quizDataRaw.length) * 100;
+            const total = currentQuestions.length;
+            const percent = (answeredCount / total) * 100;
             document.getElementById('progress-fill').style.width = percent + '%';
             document.getElementById('progress-text').innerText = answeredCount;
 
-            if (answeredCount === quizDataRaw.length) {
+            if (answeredCount === total) {
                 document.getElementById('submit-area').classList.remove('hidden');
                 document.getElementById('submit-area').scrollIntoView({ behavior: 'smooth' });
                 document.getElementById('final-submit-btn').onclick = finishQuiz;
@@ -208,7 +315,7 @@
             window.scrollTo(0,0);
             document.getElementById('quiz-ui').classList.add('hidden');
             document.getElementById('final-result').classList.remove('hidden');
-            document.getElementById('final-score-text').innerText = `Je score: ${currentScore} / ${quizDataRaw.length}`;
+            document.getElementById('final-score-text').innerText = `Je score: ${currentScore} / ${currentQuestions.length}`;
             
             const payload = {
                 naam: studentName,
@@ -218,13 +325,13 @@
             };
 
             try {
-                await fetch(SCRIPT_URL, {
+                const response = await fetch(SCRIPT_URL, {
                     method: 'POST',
                     body: JSON.stringify(payload)
                 });
                 document.getElementById('submitting-status').innerHTML = "✅ Resultaten succesvol opgeslagen!";
             } catch (e) {
-                document.getElementById('submitting-status').innerHTML = "⚠️ Verzenden mislukt. Maak een foto van je score.";
+                document.getElementById('submitting-status').innerHTML = "⚠️ Verzenden naar Sheet mislukt. Maak een foto van je score.";
             }
         }
     </script>
