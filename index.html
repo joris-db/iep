@@ -73,11 +73,11 @@
     </div>
 
     <script>
-        // De nieuwe URL die je zojuist hebt gegenereerd
+        // Gebruik je huidige actieve script URL
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzZhuEwPkor67-Eym2DK3AW2HO_rkQw72c2QR8VwHK9OlGCjay3rPM9a3NA9t1bubeG/exec"; 
 
         const quizDataRaw = [
-            { type: "mc", instr: "Meervoud", q: "In de dierentuin zagen we drie prachtige (giraffe).", options: ["giraffes", "giraffen", "girafes", "giraf's"], correct: "giraffes", hint: "Kijk goed naar de laatste letter van het woord." },
+            { type: "mc", instr: "Meervoud", q: "In de dierentuin zagen we drie prachtige (giraffe).", options: ["giraffes", "girappen", "girafes", "giraf's"], correct: "giraffes", hint: "Kijk goed naar de laatste letter van het woord." },
             { type: "mc", instr: "Werkwoordspelling", q: "De ober (schenken) de glazen vol met sap.", options: ["schenkt", "schenk", "schonkt", "geschenkt"], correct: "schenkt", hint: "Het onderwerp is 'de ober' (hij-vorm)." },
             { type: "mc", instr: "Aanhalingstekens", q: "In welke zin staan de aanhalingstekens op de goede plek?", options: ["De leraar riep: \"Pak allemaal je boeken!\"", "\"De leraar riep:\" Pak allemaal je boeken!", "De leraar riep: Pak allemaal je \"boeken!\"", "De leraar \"riep\": Pak allemaal je boeken!"], correct: "De leraar riep: \"Pak allemaal je boeken!\"", hint: "Directe rede komt na de dubbele punt." },
             { type: "mc", instr: "Meervoud", q: "Er liggen veel (taxi) te wachten bij het station.", options: ["taxi's", "taxis", "taxien", "taxies"], correct: "taxi's", hint: "Denk aan de regel voor woorden die op een klinker eindigen." },
@@ -95,7 +95,7 @@
             { type: "mc", instr: "Meervoud", q: "In de stad staan veel moderne (gebouw).", options: ["gebouwen", "gebouws", "gebouwtjes", "gebouwden"], correct: "gebouwen", hint: "Meervoud op -en." },
             { type: "mc", instr: "Spelling", q: "In welke zin is het dikgedrukte woord goed gespeld?", options: ["Ik vind het **'s ochtends** lastig.", "Ik vind het **sochtends** lastig.", "Ik vind het **s'ochtends** lastig.", "Ik vind het **s ochtends** lastig."], correct: "Ik vind het **'s ochtends** lastig.", hint: "Apostrof voor de s." },
             { type: "mc", instr: "Werkwoordspelling (VT)", q: "De leraar (leggen) de moeilijke som nog een keer uit.", options: ["legde", "legte", "leidde", "gelegd"], correct: "legde", hint: "G zit niet in 't kofschip." },
-            { type: "mc", instr: "Meervoud", q: "De kok snijdt drie (paprika) voor de soep.", options: ["paprika's", "paprikas", "paprikaen", "paprikaes"], correct: "paprika's", hint: "Klinkerregel bij -a." },
+            { type: "mc", instr: "Meervoud", q: "De kok snijdt drie (paprika) voor de soep.", options: ["paprika's", "paprikas", "paprikaen", "paprikaes"], correct: "paprika's", hint: "Klinker regel bij -a." },
             { type: "mc", instr: "Werkwoordspelling (TT)", q: "(Vinden) jij de weg naar het nieuwe station?", options: ["Vind", "Vindt", "Vond", "Gevonden"], correct: "Vind", hint: "Jij achter het werkwoord." },
             { type: "mc", instr: "Hoofdletters", q: "Welk woord moet met een hoofdletter: 'volgende week gaan we naar de efteling in kaatsheuvel.'", options: ["Efteling en Kaatsheuvel", "Volgende en Week", "Alleen Efteling", "Geen enkel woord"], correct: "Efteling en Kaatsheuvel", hint: "Namen van plaatsen en parken." },
             { type: "mc", instr: "Meervoud", q: "In de vijver zwemmen veel (vis).", options: ["vissen", "visen", "viss", "visjes"], correct: "vissen", hint: "Verdubbel de medeklinker." },
@@ -153,26 +153,32 @@
             if (container.classList.contains('finalized')) return;
 
             const item = quizDataRaw[qIdx];
-            const isCorrect = item.options[oIdx] === item.correct;
+            const chosenAnswer = item.options[oIdx];
+            const isCorrect = chosenAnswer === item.correct;
             const card = document.getElementById(`card-${qIdx}`);
             const hint = document.getElementById(`q${qIdx}-hint`);
             
             attempts[qIdx]++;
 
             if (!isCorrect) {
+                // Registreer de fout direct bij de eerste poging
                 if (attempts[qIdx] === 1) {
+                    errorDetails.push(`Vraag ${qIdx + 1}: Gekozen "${chosenAnswer}" (Correct was "${item.correct}")`);
                     card.classList.replace('border-gray-200', 'border-red-400');
                     document.getElementById(`q${qIdx}-btn${oIdx}`).classList.add('incorrect');
                     hint.classList.remove('hidden');
-                    return;
+                    return; // Geef de leerling een tweede kans
                 }
-                errorDetails.push(`Vraag ${qIdx + 1}: Fout beantwoord ("${item.options[oIdx]}")`);
             } else {
-                if (attempts[qIdx] === 1) currentScore++;
+                // Alleen punten als het in 1x goed was
+                if (attempts[qIdx] === 1) {
+                    currentScore++;
+                }
                 card.classList.replace('border-gray-200', 'border-green-400');
                 card.classList.replace('border-red-400', 'border-green-400');
             }
 
+            // Vraag afsluiten
             container.classList.add('finalized');
             hint.classList.add('hidden');
 
@@ -207,20 +213,18 @@
             const payload = {
                 naam: studentName,
                 score: currentScore,
-                fouten: errorDetails.length > 0 ? errorDetails.join(", ") : "Geen fouten",
+                fouten: errorDetails.length > 0 ? errorDetails.join(" | ") : "Geen fouten",
                 datum: new Date().toLocaleString('nl-NL')
             };
 
             try {
-                // Verzenden als JSON zoals verwacht door Code.gs
                 await fetch(SCRIPT_URL, {
                     method: 'POST',
                     body: JSON.stringify(payload)
                 });
-                document.getElementById('submitting-status').innerHTML = "✅ Resultaten succesvol opgeslagen in de Sheet!";
+                document.getElementById('submitting-status').innerHTML = "✅ Resultaten succesvol opgeslagen!";
             } catch (e) {
-                console.log(e);
-                document.getElementById('submitting-status').innerHTML = "⚠️ Resultaten konden niet automatisch worden verzonden. Maak een foto van je score.";
+                document.getElementById('submitting-status').innerHTML = "⚠️ Verzenden mislukt. Maak een foto van je score.";
             }
         }
     </script>
