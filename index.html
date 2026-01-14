@@ -11,7 +11,6 @@
         .option-btn { border: 2px solid #e5e7eb; transition: all 0.2s; cursor: pointer; text-align: left; width: 100%; padding: 0.75rem; border-radius: 0.5rem; background: white; }
         .option-btn:hover:not(.disabled) { border-color: #3b82f6; background-color: #eff6ff; }
         
-        /* Status Kleuren */
         .correct { background-color: #d1fae5 !important; border-color: #10b981 !important; color: #065f46; font-weight: bold; }
         .incorrect { background-color: #fee2e2 !important; border-color: #ef4444 !important; color: #991b1b; }
         
@@ -31,7 +30,6 @@
 </head>
 <body class="p-4 md:p-8">
     <div class="max-w-3xl mx-auto">
-        <!-- Login Container -->
         <div id="login-container" class="card p-8 text-center">
             <h1 class="text-3xl font-bold text-blue-800 mb-4">Oefentoets Taalverzorging</h1>
             <p class="text-gray-600 mb-6">Voer je volledige naam in om te beginnen.</p>
@@ -40,14 +38,13 @@
             <button onclick="startQuiz()" class="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 font-bold transition-all transform hover:scale-105">Begin de Toets</button>
         </div>
 
-        <!-- Quiz UI -->
         <div id="quiz-ui" class="hidden">
             <header class="mb-4 text-center bg-white p-6 rounded-xl shadow-sm border-b-4 border-blue-600">
                 <h1 class="text-2xl font-bold text-blue-800">Cito-stijl Oefentoets</h1>
                 <p class="text-gray-600">Leerling: <span id="display-name" class="font-bold text-blue-600"></span></p>
                 <div class="mt-4 flex items-center justify-between text-sm font-bold text-gray-500">
                     <span>Voortgang</span>
-                    <span><span id="progress-text">0</span> / 40</span>
+                    <span><span id="progress-text">0</span> / 30</span>
                 </div>
                 <div class="progress-bar mt-2">
                     <div id="progress-fill" class="progress-fill"></div>
@@ -56,21 +53,19 @@
             
             <div id="quiz-container"></div>
 
-            <!-- Verzendknop Area -->
             <div id="submit-area" class="hidden mt-8 p-8 bg-blue-50 rounded-xl border-2 border-blue-200 text-center shadow-inner">
                 <h3 class="text-2xl font-bold text-blue-900 mb-2">Goed gedaan!</h3>
-                <p class="text-blue-800 mb-6">Je hebt alle vragen doorlopen. Klik op de knop om je resultaten naar de meester te sturen.</p>
+                <p class="text-blue-800 mb-6">Je hebt alle vragen doorlopen. Klik op de knop om je resultaten definitief in te leveren.</p>
                 <button id="final-submit-btn" class="bg-green-600 text-white px-10 py-4 rounded-xl hover:bg-green-700 font-bold text-xl shadow-lg transition-transform transform hover:scale-105">
                     Resultaten Definitief Inleveren
                 </button>
             </div>
         </div>
 
-        <!-- Resultaat Scherm -->
         <div id="final-result" class="hidden card p-10 text-center">
             <h2 class="text-3xl font-bold mb-4 text-green-700">Ingeleverd!</h2>
             <div id="submitting-status" class="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
-                <div class="spinner"></div> Bezig met veilig verzenden...
+                <div class="spinner"></div> Bezig met veilig verzenden naar de spreadsheet...
             </div>
             <p class="text-xl mb-6" id="final-score-text"></p>
             <button onclick="location.reload()" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">Opnieuw proberen</button>
@@ -78,57 +73,47 @@
     </div>
 
     <script>
-        // BELANGRIJK: Zorg dat dit de URL is van de NIEUWSTE implementatie (Anyone/Iedereen toegang)
-        const SCRIPT_URL = "https://script.google.com/a/macros/laternamagica.nl/s/AKfycbza4Tfm0KClbXt9qjsvTCyl3iZOIO1r7kS8ma0Es0c9tCgnfsD9Cm9CqPHfdjW8DArk/exec"; 
+        // De nieuwe URL die je zojuist hebt gegenereerd
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzZhuEwPkor67-Eym2DK3AW2HO_rkQw72c2QR8VwHK9OlGCjay3rPM9a3NA9t1bubeG/exec"; 
 
         const quizDataRaw = [
-            { type: "open", instr: "Werkwoordspelling", q: "Mijn vader (vinden) dat ik vaker moet buiten spelen.", correct: "vindt", hint: "Onderwerp is 'hij' (stam + t)." },
-            { type: "open", instr: "Meervoud", q: "Op de boerderij lopen wel twintig (kip).", correct: "kippen", hint: "Korte klank, dus medeklinker verdubbelen." },
-            { type: "mc", instr: "Hoofdletters", q: "Welke zin is correct?", options: ["wij gaan naar parijs.", "Wij gaan naar Parijs.", "Wij gaan naar parijs."], correct: "Wij gaan naar Parijs.", hint: "Zin en stad met hoofdletter." },
-            { type: "open", instr: "Bijvoeglijk naamwoord", q: "Ik heb een mooie (goud) ring gekregen.", correct: "gouden", hint: "Stoffelijk bijvoeglijk naamwoord eindigt op -en." },
-            { type: "open", instr: "Meervoud", q: "In de herfst vallen de (blad) van de bomen.", correct: "bladeren", hint: "Let op: onregelmatig meervoud." },
-            { type: "open", instr: "Verleden tijd", q: "Gisteren (reizen) wij met de trein.", correct: "reisden", hint: "De stam eindigt op een 'z' (verhuiz-), die zit niet in 't kofschip." },
-            { type: "mc", instr: "Komma's", q: "Waar moet de komma?", options: ["Omdat het regende, bleven we binnen.", "Omdat het regende bleven, we binnen.", "Omdat, het regende bleven we binnen."], correct: "Omdat het regende, bleven we binnen.", hint: "Komma tussen twee persoonsvormen." },
-            { type: "open", instr: "Verkleinwoord", q: "Er zit een klein (gat) in mijn broek.", correct: "gaatje", hint: "Let op de klinker." },
-            { type: "open", instr: "Tegenwoordige tijd", q: "De bakker (worden) elke dag vroeg wakker.", correct: "wordt", hint: "Stam + t." },
-            { type: "open", instr: "Meervoud", q: "Mijn oma heeft drie (hond).", correct: "honden", hint: "Standaard meervoud op -en." },
-            { type: "mc", instr: "Tegengestelde", q: "Wat is het tegenovergestelde van 'modern'?", options: ["Nieuw", "Ouderwets", "Snel"], correct: "Ouderwets", hint: "Iets van vroeger." },
-            { type: "open", instr: "Samenstelling", q: "De (hout) tafel staat in de tuin.", correct: "houten", hint: "Stoffelijk." },
-            { type: "open", instr: "Meervoud", q: "In de sloot zwemmen veel (gans).", correct: "ganzen", hint: "S verandert in Z." },
-            { type: "open", instr: "Tegenwoordige tijd", q: "Het meisje (fietsen) naar school.", correct: "fietst", hint: "Hij/zij vorm." },
-            { type: "mc", instr: "Aanhalingstekens", q: "Wat is de juiste plek?", options: ["Sam zei: \"Hoi!\"", "Sam zei: Hoi!", "\"Sam zei: Hoi!\""], correct: "Sam zei: \"Hoi!\"", hint: "Na de dubbele punt." },
-            { type: "open", instr: "Verkleinwoord", q: "Daar vliegt een klein (vogel).", correct: "vogeltje", hint: "Eindigt op -tje." },
-            { type: "open", instr: "Verleden tijd", q: "Gisteren (branden) de kaars.", correct: "brandde", hint: "Stam eindigt op d." },
-            { type: "open", instr: "Meervoud", q: "In de stad zijn veel (gracht).", correct: "grachten", hint: "Voeg -en toe." },
-            { type: "mc", instr: "Schrijfwijze", q: "Welk woord is goed geschreven?", options: ["Voetbal veld", "Voetbalveld", "Voetbal-veld"], correct: "Voetbalveld", hint: "Samenstellingen schrijf je aan elkaar." },
-            { type: "open", instr: "Voltooid deelwoord", q: "Ik heb mijn werk al (maken).", correct: "gemaakt", hint: "Kijk naar 't kofschip." },
-            { type: "open", instr: "Bijvoeglijk naamwoord", q: "De (gestolen) fiets is gevonden.", correct: "gestolen", hint: "Korte klank blijft kort." },
-            { type: "open", instr: "Meervoud", q: "We eten vanavond (aardappel).", correct: "aardappelen", alt: "aardappels", hint: "-en of -s." },
-            { type: "mc", instr: "Maanden", q: "Wat is juist?", options: ["In Juli is het warm.", "In juli is het warm."], correct: "In juli is het warm.", hint: "Maanden zonder hoofdletter." },
-            { type: "open", instr: "Meervoud", q: "Er liggen twee (ei) in het nest.", correct: "eieren", hint: "Bijzonder meervoud." },
-            { type: "open", instr: "Vraagvorm", q: "(Verraden) jij je geheim?", correct: "Verraad", hint: "Jij achter het werkwoord? Geen t." },
-            { type: "open", instr: "Verbuiging", q: "Dat is een (mooi) tekening.", correct: "mooie", hint: "Voeg -e toe." },
-            { type: "mc", instr: "Grammatica", q: "Wat is de persoonsvorm: 'De hond rent.'", options: ["hond", "rent"], correct: "rent", hint: "Het werkwoord." },
-            { type: "open", instr: "Meervoud", q: "De (tomaat) zijn rood.", correct: "tomaten", hint: "Lange klank behouden." },
-            { type: "open", instr: "Verleden tijd", q: "Mijn broer (huilen) gisteren.", correct: "huilde", hint: "L zit niet in kofschip." },
-            { type: "open", instr: "Verkleinwoord", q: "Ik wil een (koek) bij de thee.", correct: "koekje", hint: "-je." },
-            { type: "mc", instr: "Moeilijk woord", q: "Hoe spel je dit goed?", options: ["Onmiddelijk", "Onmiddellijk"], correct: "Onmiddellijk", hint: "2x d, 2x l." },
-            { type: "open", instr: "Meervoud", q: "Er staan veel (boom) in het bos.", correct: "bomen", hint: "Een o weg." },
-            { type: "open", instr: "Tegenwoordige tijd", q: "De zon (schijnen) fel.", correct: "schijnt", hint: "Stam + t." },
-            { type: "open", instr: "Verbuiging", q: "Het (versmald) pad is gevaarlijk.", correct: "versmalde", hint: "Bijvoeglijk naamwoord." },
-            { type: "mc", instr: "Onderwerp", q: "Wat is het onderwerp: 'Wij kijken tv.'", options: ["Wij", "kijken", "tv"], correct: "Wij", hint: "Wie kijkt er?" },
-            { type: "open", instr: "Meervoud", q: "Ik heb twee nieuwe (horloge).", correct: "horloges", hint: "Eindigt op s." },
-            { type: "open", instr: "Verleden tijd", q: "De politie (stoppen) de dief.", correct: "stopte", hint: "P zit in kofschip." },
-            { type: "open", instr: "Verkleinwoord", q: "Dat (huis) is blauw.", correct: "huisje", hint: "-je." },
-            { type: "open", instr: "Voltooid deelwoord", q: "Zij heeft de hele dag (dansen).", correct: "gedanst", hint: "Kofschip." },
-            { type: "mc", instr: "Leestekens", q: "Waar moet de punt?", options: ["Ik ben moe.", "Ik ben moe", "ik ben moe."], correct: "Ik ben moe.", hint: "Einde van de zin." }
+            { type: "mc", instr: "Meervoud", q: "In de dierentuin zagen we drie prachtige (giraffe).", options: ["giraffes", "giraffen", "girafes", "giraf's"], correct: "giraffes", hint: "Kijk goed naar de laatste letter van het woord." },
+            { type: "mc", instr: "Werkwoordspelling", q: "De ober (schenken) de glazen vol met sap.", options: ["schenkt", "schenk", "schonkt", "geschenkt"], correct: "schenkt", hint: "Het onderwerp is 'de ober' (hij-vorm)." },
+            { type: "mc", instr: "Aanhalingstekens", q: "In welke zin staan de aanhalingstekens op de goede plek?", options: ["De leraar riep: \"Pak allemaal je boeken!\"", "\"De leraar riep:\" Pak allemaal je boeken!", "De leraar riep: Pak allemaal je \"boeken!\"", "De leraar \"riep\": Pak allemaal je boeken!"], correct: "De leraar riep: \"Pak allemaal je boeken!\"", hint: "Directe rede komt na de dubbele punt." },
+            { type: "mc", instr: "Meervoud", q: "Er liggen veel (taxi) te wachten bij het station.", options: ["taxi's", "taxis", "taxien", "taxies"], correct: "taxi's", hint: "Denk aan de regel voor woorden die op een klinker eindigen." },
+            { type: "mc", instr: "Bijvoeglijk naamwoord", q: "De koning zat op een (goud) troon.", options: ["gouden", "goude", "goud", "goudene"], correct: "gouden", hint: "Stoffelijk bijvoeglijk naamwoord." },
+            { type: "mc", instr: "Werkwoordspelling (VT)", q: "Vorige week (verhuizen) mijn beste vriend naar een andere stad.", options: ["verhuisde", "verhuiste", "verhuisden", "verhuist"], correct: "verhuisde", hint: "De stam eindigt op een z." },
+            { type: "mc", instr: "Verkleinwoord", q: "Kijk daar, een klein (konijn) in het gras!", options: ["konijntje", "konijntien", "konijnpje", "konijnje"], correct: "konijntje", hint: "Woorden op -n krijgen vaak -tje." },
+            { type: "mc", instr: "Werkwoordspelling (TT)", q: "(Antwoorden) jij de brief van je oma vandaag nog?", options: ["Antwoord", "Antwoordt", "Antwoordde", "Geantwoord"], correct: "Antwoord", hint: "Jij achter de persoonsvorm = geen -t." },
+            { type: "mc", instr: "Meervoud", q: "In de herfst vallen de (blad) van de bomen.", options: ["bladeren", "bladen", "bladers", "blads"], correct: "bladeren", hint: "Onregelmatig meervoud." },
+            { type: "mc", instr: "Hoofdletters", q: "In welke zin zijn de hoofdletters goed gebruikt?", options: ["Op dinsdag vliegen we van Schiphol naar Londen.", "Op Dinsdag vliegen we van schiphol naar londen.", "Op dinsdag vliegen we van schiphol naar Londen.", "Op Dinsdag vliegen we van Schiphol naar Londen."], correct: "Op dinsdag vliegen we van Schiphol naar Londen.", hint: "Plaatsnamen wel, dagen niet." },
+            { type: "mc", instr: "Voltooid deelwoord", q: "De politie heeft de dief gisteren (pakken).", options: ["gepakt", "gepakkerd", "gepakted", "pakte"], correct: "gepakt", hint: "Gebruik 't kofschip x." },
+            { type: "mc", instr: "Meervoud", q: "Onze buren hebben twee grote (hond).", options: ["honden", "hondt", "hondes", "honds"], correct: "honden", hint: "Standaard meervoud op -en." },
+            { type: "mc", instr: "Bijvoeglijk naamwoord", q: "Zij draagt een (wol) sjaal tegen de kou.", options: ["wollen", "wolle", "wol", "wollige"], correct: "wollen", hint: "De sjaal is gemaakt van wol." },
+            { type: "mc", instr: "Verkleinwoord", q: "Ik drink graag uit dit kleine (glas).", options: ["glaasje", "glastje", "glasje", "glassie"], correct: "glaasje", hint: "Klinker wordt lang." },
+            { type: "mc", instr: "Werkwoordspelling (VT)", q: "De kinderen (spelen) de hele middag buiten in de zon.", options: ["speelden", "speelten", "speelde", "gespeeld"], correct: "speelden", hint: "Onderwerp is meervoud." },
+            { type: "mc", instr: "Meervoud", q: "In de stad staan veel moderne (gebouw).", options: ["gebouwen", "gebouws", "gebouwtjes", "gebouwden"], correct: "gebouwen", hint: "Meervoud op -en." },
+            { type: "mc", instr: "Spelling", q: "In welke zin is het dikgedrukte woord goed gespeld?", options: ["Ik vind het **'s ochtends** lastig.", "Ik vind het **sochtends** lastig.", "Ik vind het **s'ochtends** lastig.", "Ik vind het **s ochtends** lastig."], correct: "Ik vind het **'s ochtends** lastig.", hint: "Apostrof voor de s." },
+            { type: "mc", instr: "Werkwoordspelling (VT)", q: "De leraar (leggen) de moeilijke som nog een keer uit.", options: ["legde", "legte", "leidde", "gelegd"], correct: "legde", hint: "G zit niet in 't kofschip." },
+            { type: "mc", instr: "Meervoud", q: "De kok snijdt drie (paprika) voor de soep.", options: ["paprika's", "paprikas", "paprikaen", "paprikaes"], correct: "paprika's", hint: "Klinkerregel bij -a." },
+            { type: "mc", instr: "Werkwoordspelling (TT)", q: "(Vinden) jij de weg naar het nieuwe station?", options: ["Vind", "Vindt", "Vond", "Gevonden"], correct: "Vind", hint: "Jij achter het werkwoord." },
+            { type: "mc", instr: "Hoofdletters", q: "Welk woord moet met een hoofdletter: 'volgende week gaan we naar de efteling in kaatsheuvel.'", options: ["Efteling en Kaatsheuvel", "Volgende en Week", "Alleen Efteling", "Geen enkel woord"], correct: "Efteling en Kaatsheuvel", hint: "Namen van plaatsen en parken." },
+            { type: "mc", instr: "Meervoud", q: "In de vijver zwemmen veel (vis).", options: ["vissen", "visen", "viss", "visjes"], correct: "vissen", hint: "Verdubbel de medeklinker." },
+            { type: "mc", instr: "Werkwoordspelling (VT)", q: "Wij (fietsen) gisteren helemaal naar het strand.", options: ["fietsten", "fietsden", "fietste", "gefietst"], correct: "fietsten", hint: "S zit in 't kofschip." },
+            { type: "mc", instr: "Verkleinwoord", q: "Wat een schattig (lam) loopt daar in de wei!", options: ["lammetje", "lamtje", "lampje", "lametje"], correct: "lammetje", hint: "Medeklinker verdubbelen." },
+            { type: "mc", instr: "Bijvoeglijk naamwoord", q: "De ridder droeg een (ijzer) harnas.", options: ["ijzeren", "ijzere", "ijzer", "ijzerig"], correct: "ijzeren", hint: "Materiaal is ijzer." },
+            { type: "mc", instr: "Aanhalingstekens", q: "In welke zin staan de aanhalingstekens op de goede plek?", options: ["Mama vroeg: \"Wie wil er een ijsje?\"", "\"Mama vroeg: Wie wil er een ijsje?\"", "Mama vroeg: Wie wil er een \"ijsje?\"", "Mama \"vroeg\": Wie wil er een ijsje?"], correct: "Mama vroeg: \"Wie wil er een ijsje?\"", hint: "Letterlijke tekst tussen tekens." },
+            { type: "mc", instr: "Meervoud", q: "De vlieger heeft twee grote (vleugel).", options: ["vleugels", "vleugelen", "vleugel's", "vleugeles"], correct: "vleugels", hint: "Kies tussen -s of -en." },
+            { type: "mc", instr: "Werkwoordspelling (TT)", q: "Het meisje (beloven) plechtig dat ze op tijd zal zijn.", options: ["belooft", "beloofd", "belovt", "beloven"], correct: "belooft", hint: "Stam is beloof + t." },
+            { type: "mc", instr: "Verkleinwoord", q: "Er drijft een klein (boot) in de sloot.", options: ["bootje", "boottje", "bootje-tje", "bootpje"], correct: "bootje", hint: "Woord op -t krijgt -je." },
+            { type: "mc", instr: "Grammatica", q: "Welke zin is grammaticaal juist?", options: ["Ik heb mijn tas op de tafel gelegd.", "Ik heb mijn tas op de tafel geleid.", "Ik heb mijn tas op de tafel gelecht.", "Ik heb mijn tas op de tafel legt"], correct: "Ik heb mijn tas op de tafel gelegd.", hint: "Voltooid deelwoord van leggen." }
         ];
 
         let currentScore = 0;
         let answeredCount = 0;
-        let attempts = {};
         let studentName = "";
         let errorDetails = [];
+        let attempts = {};
 
         function startQuiz() {
             const nameInput = document.getElementById('student-name');
@@ -151,22 +136,12 @@
                 card.className = 'card p-6 mb-6 border-l-4 border-gray-200';
                 card.id = `card-${index}`;
                 
-                let inputHtml = "";
-                if (item.type === "mc") {
-                    inputHtml = `<div class="grid grid-cols-1 gap-3" id="q${index}-inputs">
-                        ${item.options.map((opt, i) => `<button onclick="checkMC(${index}, ${i})" id="q${index}-btn${i}" class="option-btn">${opt}</button>`).join('')}
-                    </div>`;
-                } else {
-                    inputHtml = `<div id="q${index}-inputs" class="flex flex-col sm:flex-row gap-2">
-                        <input type="text" id="q${index}-text" class="flex-grow" placeholder="Typ je antwoord..." onkeypress="if(event.key === 'Enter') checkOpen(${index})">
-                        <button onclick="checkOpen(${index})" id="q${index}-submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-bold transition">Controleer</button>
-                    </div>`;
-                }
-
                 card.innerHTML = `
                     <div class="instruction">${item.instr} (Vraag ${index + 1})</div>
                     <p class="font-bold text-lg mb-4">${item.q}</p>
-                    ${inputHtml}
+                    <div class="grid grid-cols-1 gap-3" id="q${index}-inputs">
+                        ${item.options.map((opt, i) => `<button onclick="checkMC(${index}, ${i})" id="q${index}-btn${i}" class="option-btn">${opt}</button>`).join('')}
+                    </div>
                     <div id="q${index}-hint" class="hint-text hidden"><strong>Tip:</strong> ${item.hint}</div>
                 `;
                 container.appendChild(card);
@@ -174,39 +149,26 @@
         }
 
         window.checkMC = (qIdx, oIdx) => {
-            const item = quizDataRaw[qIdx];
-            handleResult(qIdx, item.options[oIdx] === item.correct, oIdx, item.options[oIdx]);
-        };
-
-        window.checkOpen = (qIdx) => {
-            const input = document.getElementById(`q${qIdx}-text`);
-            const val = input.value.trim();
-            if (!val) return;
-            const item = quizDataRaw[qIdx];
-            const isCorrect = val.toLowerCase() === item.correct.toLowerCase() || 
-                             (item.alt && val.toLowerCase() === item.alt.toLowerCase());
-            handleResult(qIdx, isCorrect, null, val);
-        };
-
-        function handleResult(qIndex, isCorrect, optIdx, val) {
-            const container = document.getElementById(`q${qIndex}-inputs`);
+            const container = document.getElementById(`q${qIdx}-inputs`);
             if (container.classList.contains('finalized')) return;
 
-            attempts[qIndex]++;
-            const card = document.getElementById(`card-${qIndex}`);
-            const hint = document.getElementById(`q${qIndex}-hint`);
+            const item = quizDataRaw[qIdx];
+            const isCorrect = item.options[oIdx] === item.correct;
+            const card = document.getElementById(`card-${qIdx}`);
+            const hint = document.getElementById(`q${qIdx}-hint`);
+            
+            attempts[qIdx]++;
 
             if (!isCorrect) {
-                if (attempts[qIndex] === 1) {
+                if (attempts[qIdx] === 1) {
                     card.classList.replace('border-gray-200', 'border-red-400');
-                    if (optIdx !== null) document.getElementById(`q${qIndex}-btn${optIdx}`).classList.add('incorrect');
-                    else document.getElementById(`q${qIndex}-text`).classList.add('incorrect');
+                    document.getElementById(`q${qIdx}-btn${oIdx}`).classList.add('incorrect');
                     hint.classList.remove('hidden');
-                    return; 
+                    return;
                 }
-                errorDetails.push(`Vraag ${qIndex + 1}: "${val}" ingevuld (moest zijn: "${quizDataRaw[qIndex].correct}")`);
+                errorDetails.push(`Vraag ${qIdx + 1}: Fout beantwoord ("${item.options[oIdx]}")`);
             } else {
-                if (attempts[qIndex] === 1) currentScore++;
+                if (attempts[qIdx] === 1) currentScore++;
                 card.classList.replace('border-gray-200', 'border-green-400');
                 card.classList.replace('border-red-400', 'border-green-400');
             }
@@ -214,26 +176,15 @@
             container.classList.add('finalized');
             hint.classList.add('hidden');
 
-            if (optIdx !== null) {
-                const buttons = container.querySelectorAll('button');
-                buttons.forEach(btn => btn.classList.add('disabled'));
-                const correctIdx = quizDataRaw[qIndex].options.indexOf(quizDataRaw[qIndex].correct);
-                document.getElementById(`q${qIndex}-btn${correctIdx}`).className = 'option-btn correct disabled';
-                if (!isCorrect) document.getElementById(`q${qIndex}-btn${optIdx}`).classList.add('incorrect');
-            } else {
-                const input = document.getElementById(`q${qIndex}-text`);
-                const btn = document.getElementById(`q${qIndex}-submit`);
-                input.disabled = true;
-                btn.disabled = true;
-                btn.classList.add('opacity-50');
-                input.value = quizDataRaw[qIndex].correct;
-                input.classList.remove('incorrect');
-                input.classList.add('correct');
-            }
+            const buttons = container.querySelectorAll('button');
+            buttons.forEach(btn => btn.classList.add('disabled'));
+            const correctIdx = item.options.indexOf(item.correct);
+            document.getElementById(`q${qIdx}-btn${correctIdx}`).className = 'option-btn correct disabled';
+            if (!isCorrect) document.getElementById(`q${qIdx}-btn${oIdx}`).classList.add('incorrect');
 
             answeredCount++;
             updateProgress();
-        }
+        };
 
         function updateProgress() {
             const percent = (answeredCount / quizDataRaw.length) * 100;
@@ -241,9 +192,8 @@
             document.getElementById('progress-text').innerText = answeredCount;
 
             if (answeredCount === quizDataRaw.length) {
-                const area = document.getElementById('submit-area');
-                area.classList.remove('hidden');
-                area.scrollIntoView({ behavior: 'smooth' });
+                document.getElementById('submit-area').classList.remove('hidden');
+                document.getElementById('submit-area').scrollIntoView({ behavior: 'smooth' });
                 document.getElementById('final-submit-btn').onclick = finishQuiz;
             }
         }
@@ -252,41 +202,25 @@
             window.scrollTo(0,0);
             document.getElementById('quiz-ui').classList.add('hidden');
             document.getElementById('final-result').classList.remove('hidden');
-            document.getElementById('final-score-text').innerText = `Je hebt ${currentScore} van de ${quizDataRaw.length} vragen goed beantwoord.`;
+            document.getElementById('final-score-text').innerText = `Je score: ${currentScore} / ${quizDataRaw.length}`;
             
             const payload = {
                 naam: studentName,
                 score: currentScore,
-                fouten: errorDetails.length > 0 ? errorDetails.join("\n") : "Geen fouten!",
+                fouten: errorDetails.length > 0 ? errorDetails.join(", ") : "Geen fouten",
                 datum: new Date().toLocaleString('nl-NL')
             };
 
-            const statusEl = document.getElementById('submitting-status');
-
             try {
-                // We gebruiken URLSearchParams voor een betere compatibiliteit met Google Apps Script doPost
-                const formData = new URLSearchParams();
-                for (const key in payload) {
-                    formData.append(key, payload[key]);
-                }
-
-                const response = await fetch(SCRIPT_URL, {
+                // Verzenden als JSON zoals verwacht door Code.gs
+                await fetch(SCRIPT_URL, {
                     method: 'POST',
-                    mode: 'no-cors', // Noodzakelijk voor Google Scripts vanaf andere domeinen
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded'
-                    },
-                    body: formData.toString()
+                    body: JSON.stringify(payload)
                 });
-
-                // Omdat mode 'no-cors' is, kunnen we de response niet echt lezen, 
-                // maar als er geen error wordt gegooid, gaan we uit van succes.
-                statusEl.innerHTML = "✅ Je resultaten zijn naar de meester gestuurd!";
-                statusEl.classList.replace('bg-blue-50', 'bg-green-50');
+                document.getElementById('submitting-status').innerHTML = "✅ Resultaten succesvol opgeslagen in de Sheet!";
             } catch (e) {
-                console.error("Verzendfout:", e);
-                statusEl.innerHTML = `⚠️ Fout bij verzenden. Controleer je internet of maak een screenshot.`;
-                statusEl.classList.replace('bg-blue-50', 'bg-red-50');
+                console.log(e);
+                document.getElementById('submitting-status').innerHTML = "⚠️ Resultaten konden niet automatisch worden verzonden. Maak een foto van je score.";
             }
         }
     </script>
