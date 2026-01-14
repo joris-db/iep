@@ -29,7 +29,6 @@
         .progress-fill { height: 100%; background: #3b82f6; width: 0%; transition: width 0.3s; }
     </style>
 </head>
-
 <body class="p-4 md:p-8">
     <div class="max-w-3xl mx-auto">
         <!-- Login Container -->
@@ -79,10 +78,9 @@
     </div>
 
     <script>
-        // De door jou verstrekte nieuwe URL
+        // BELANGRIJK: Zorg dat dit de URL is van de NIEUWSTE implementatie (Anyone/Iedereen toegang)
         const SCRIPT_URL = "https://script.google.com/a/macros/laternamagica.nl/s/AKfycbza4Tfm0KClbXt9qjsvTCyl3iZOIO1r7kS8ma0Es0c9tCgnfsD9Cm9CqPHfdjW8DArk/exec"; 
 
-        // Quiz data met 40 vragen (geoptimaliseerd voor 1F/2F niveau)
         const quizDataRaw = [
             { type: "open", instr: "Werkwoordspelling", q: "Mijn vader (vinden) dat ik vaker moet buiten spelen.", correct: "vindt", hint: "Onderwerp is 'hij' (stam + t)." },
             { type: "open", instr: "Meervoud", q: "Op de boerderij lopen wel twintig (kip).", correct: "kippen", hint: "Korte klank, dus medeklinker verdubbelen." },
@@ -199,7 +197,6 @@
             const hint = document.getElementById(`q${qIndex}-hint`);
 
             if (!isCorrect) {
-                // Eerste keer fout
                 if (attempts[qIndex] === 1) {
                     card.classList.replace('border-gray-200', 'border-red-400');
                     if (optIdx !== null) document.getElementById(`q${qIndex}-btn${optIdx}`).classList.add('incorrect');
@@ -207,16 +204,13 @@
                     hint.classList.remove('hidden');
                     return; 
                 }
-                // Tweede keer ook fout
                 errorDetails.push(`Vraag ${qIndex + 1}: "${val}" ingevuld (moest zijn: "${quizDataRaw[qIndex].correct}")`);
             } else {
-                // Goed beantwoord
                 if (attempts[qIndex] === 1) currentScore++;
                 card.classList.replace('border-gray-200', 'border-green-400');
-                card.classList.replace('border-red-400', 'border-green-400'); // Fix: Verwijder rood als het nu goed is
+                card.classList.replace('border-red-400', 'border-green-400');
             }
 
-            // Finaliseer vraag
             container.classList.add('finalized');
             hint.classList.add('hidden');
 
@@ -267,16 +261,32 @@
                 datum: new Date().toLocaleString('nl-NL')
             };
 
+            const statusEl = document.getElementById('submitting-status');
+
             try {
-                // Gebruik no-cors omdat Google Apps Script geen CORS headers stuurt bij POST redirects
-                await fetch(SCRIPT_URL, {
+                // We gebruiken URLSearchParams voor een betere compatibiliteit met Google Apps Script doPost
+                const formData = new URLSearchParams();
+                for (const key in payload) {
+                    formData.append(key, payload[key]);
+                }
+
+                const response = await fetch(SCRIPT_URL, {
                     method: 'POST',
-                    mode: 'no-cors',
-                    body: JSON.stringify(payload)
+                    mode: 'no-cors', // Noodzakelijk voor Google Scripts vanaf andere domeinen
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: formData.toString()
                 });
-                document.getElementById('submitting-status').innerHTML = "✅ Je resultaten zijn naar de meester gestuurd!";
+
+                // Omdat mode 'no-cors' is, kunnen we de response niet echt lezen, 
+                // maar als er geen error wordt gegooid, gaan we uit van succes.
+                statusEl.innerHTML = "✅ Je resultaten zijn naar de meester gestuurd!";
+                statusEl.classList.replace('bg-blue-50', 'bg-green-50');
             } catch (e) {
-                document.getElementById('submitting-status').innerHTML = "⚠️ Het verzenden is niet gelukt. Maak een screenshot van je score.";
+                console.error("Verzendfout:", e);
+                statusEl.innerHTML = `⚠️ Fout bij verzenden. Controleer je internet of maak een screenshot.`;
+                statusEl.classList.replace('bg-blue-50', 'bg-red-50');
             }
         }
     </script>
