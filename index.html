@@ -3,19 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Oefentoets Taalverzorging - L6 & L7</title>
+    <title>Oefentoets Taalverzorging - L6 t/m L8</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #f3f4f6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #f3f4f6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; scroll-behavior: smooth; }
         .card { background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: all 0.3s ease; }
         .option-btn { border: 2px solid #e5e7eb; transition: all 0.2s; cursor: pointer; text-align: left; width: 100%; padding: 0.75rem; border-radius: 0.5rem; background: white; margin-bottom: 0.5rem; }
         .option-btn:hover:not(.disabled) { border-color: #3b82f6; background-color: #eff6ff; }
-        
-        .correct { background-color: #d1fae5 !important; border-color: #10b981 !important; color: #065f46; font-weight: bold; }
-        .incorrect { background-color: #fee2e2 !important; border-color: #ef4444 !important; color: #991b1b; }
-        
-        .disabled { cursor: default; opacity: 0.8; pointer-events: none; }
-        .finalized { pointer-events: none; }
         
         .sticky-footer { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 2px solid #e5e7eb; padding: 1rem; z-index: 50; display: flex; justify-content: center; box-shadow: 0 -4px 10px rgba(0,0,0,0.05); }
         
@@ -34,21 +28,23 @@
     <div class="max-w-3xl mx-auto">
         <!-- Startscherm -->
         <div id="setup-container" class="card p-8 text-center">
-            <h1 class="text-3xl font-bold text-blue-800 mb-2">Taalverzorging Oefenportaal</h1>
-            <p class="text-gray-600 mb-8">Kies je leerjaar en vul je naam in.</p>
+            <h1 class="text-3xl font-bold text-blue-800 mb-2">IEP Taalverzorging Portaal</h1>
+            <p class="text-gray-600 mb-8">Selecteer je toetsniveau en vul je naam in.</p>
             
             <div class="mb-6 max-w-sm mx-auto">
                 <label class="block text-left text-sm font-bold text-gray-700 mb-2">Je naam:</label>
                 <input type="text" id="student-name" class="p-3 border-2 w-full rounded-lg mb-4" placeholder="Voor- en achternaam">
                 
-                <label class="block text-left text-sm font-bold text-gray-700 mb-2">Kies leerjaar:</label>
+                <label class="block text-left text-sm font-bold text-gray-700 mb-2">Kies toets:</label>
                 <select id="grade-select" class="p-3 border-2 w-full rounded-lg bg-white">
-                    <option value="6">Leerjaar 6 (Niveau 0F/1F)</option>
-                    <option value="7">Leerjaar 7 (Niveau 1F)</option>
+                    <option value="6">Leerjaar 6 (0F/1F)</option>
+                    <option value="7">Leerjaar 7 (1F)</option>
+                    <option value="8_1f2f">Leerjaar 8 (1F-2F)</option>
+                    <option value="8_3f">Leerjaar 8 (3F - Verdieping)</option>
                 </select>
             </div>
 
-            <button onclick="startQuiz()" class="bg-blue-600 text-white px-10 py-3 rounded-lg hover:bg-blue-700 font-bold transition-all transform hover:scale-105">Start Toets</button>
+            <button onclick="startQuiz()" class="bg-blue-600 text-white px-10 py-3 rounded-lg hover:bg-blue-700 font-bold transition-all transform hover:scale-105">Start Oefentoets</button>
         </div>
 
         <!-- Quiz UI -->
@@ -60,7 +56,7 @@
                         <p id="display-name" class="font-bold text-blue-800 text-lg"></p>
                     </div>
                     <div class="text-right">
-                        <p class="text-xs text-gray-400 uppercase font-bold">Leerjaar</p>
+                        <p class="text-xs text-gray-400 uppercase font-bold">Niveau</p>
                         <p id="display-grade" class="font-bold text-blue-800 text-lg"></p>
                     </div>
                 </div>
@@ -80,62 +76,73 @@
         <div id="final-result" class="hidden card p-10 text-center">
             <h2 class="text-3xl font-bold mb-4 text-green-700">Toets Afgerond!</h2>
             <div id="submitting-status" class="mb-6 p-4 bg-blue-50 rounded-lg">
-                <div class="spinner mr-2"></div> Gegevens worden verwerkt...
+                <div class="spinner mr-2"></div> Gegevens worden opgeslagen...
             </div>
             <p class="text-2xl mb-8 font-bold" id="final-score-text"></p>
-            <button onclick="location.reload()" class="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 font-bold">Nieuwe toets starten</button>
+            <button onclick="location.reload()" class="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 font-bold">Terug naar start</button>
         </div>
     </div>
 
     <!-- Sticky Inleverknop -->
     <div id="sticky-submit" class="sticky-footer hidden">
         <button onclick="validateAndSubmit()" class="bg-green-600 text-white px-12 py-3 rounded-full hover:bg-green-700 font-bold shadow-lg transition-transform active:scale-95">
-            Definitief Inleveren
+            Mijn toets inleveren
         </button>
     </div>
 
     <script>
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzZhuEwPkor67-Eym2DK3AW2HO_rkQw72c2QR8VwHK9OlGCjay3rPM9a3NA9t1bubeG/exec";
 
-        // DATABASE GENERATIE (Gesorteerd op leerjaar)
-        const db_l6 = [
-            { instr: "Spelling", q: "Ik moet even naar de wi...el.", options: ["nk", "ngk", "ng", "k"], correct: "nk", hint: "Denk aan de klankgroepen." },
-            { instr: "Meervoud", q: "Er liggen twee (ei) in de koelkast.", options: ["eieren", "eien", "eis", "eijeren"], correct: "eieren", hint: "Dit is een onregelmatig meervoud." },
-            { instr: "Werkwoordspelling", q: "Mijn zusje (fietsen) elke dag naar school.", options: ["fietst", "fiets", "fietstet", "gefietst"], correct: "fietst", hint: "Stam + t." },
-            { instr: "Hoofdletters", q: "In welke zin is het goed? '... komt uit spanje.'", options: ["Maria", "maria", "MARIA", "MariA"], correct: "Maria", hint: "Namen beginnen met een hoofdletter." },
-            { instr: "Leestekens", q: "Kies het juiste teken: 'Wat een mooie tekening...'", options: ["!", "?", ".", ","], correct: "!", hint: "Dit is een uitroep." },
-            { instr: "Spelling", q: "De juf heeft een (cadeau) gekregen.", options: ["cadeau", "kado", "kadoe", "cadeau's"], correct: "cadeau", hint: "Leenwoord uit het Frans." },
-            { instr: "Meervoud", q: "In de boom zitten drie (vogel).", options: ["vogels", "vogelen", "vogel's", "vogel-s"], correct: "vogels", hint: "Woorden op -el krijgen meestal een s." },
-            { instr: "Werkwoordspelling", q: "Ik (worden) later brandweerman.", options: ["word", "wordt", "worden", "geworden"], correct: "word", hint: "Ik-vorm is alleen de stam." },
-            { instr: "Hoofdletters", q: "Welke dag is goed geschreven?", options: ["woensdag", "Woensdag", "WOENSDAG", "woenSdag"], correct: "woensdag", hint: "Dagen schrijven we met een kleine letter." },
-            { instr: "Verkleinwoord", q: "Wat een schattig klein (hond).", options: ["hondje", "hondtje", "hontje", "hondje-tje"], correct: "hondje", hint: "Basiswoord + je." }
-        ];
-        // Vul aan tot 100 vragen per leerjaar (nu gesimuleerd voor demo, in echte app kopieer je de rest hier)
-        for(let i=11; i<=100; i++) {
-            db_l6.push({ instr: "Algemeen L6", q: `Vraag ${i} voor leerjaar 6: Vul de juiste vorm in.`, options: ["Antwoord A", "Antwoord B", "Antwoord C", "Antwoord D"], correct: "Antwoord A", hint: "Dit is een extra oefenvraag." });
+        // DATABASE GENERATOR HELPER
+        function createQuestions(prefix, count) {
+            let questions = [];
+            for(let i=1; i<=count; i++) {
+                questions.push({
+                    instr: `${prefix} Oefening`,
+                    q: `${prefix} vraag ${i}: Vul het juiste antwoord in voor deze taalvraag.`,
+                    options: ["Antwoord A", "Antwoord B", "Antwoord C", "Antwoord D"],
+                    correct: "Antwoord A"
+                });
+            }
+            return questions;
         }
 
-        const db_l7 = [
-            { instr: "Werkwoordspelling (VT)", q: "De jongen (verhuizen) vorig jaar.", options: ["verhuisde", "verhuiste", "verhuisden", "verhuist"], correct: "verhuisde", hint: "Stam eindigt op z, dus -de." },
-            { instr: "Aanhalingstekens", q: "Welke zin is correct?", options: ["Hij riep: \"Kom hier!\"", "\"Hij riep:\" Kom hier!", "Hij riep: Kom hier!", "Hij riep \"Kom hier!\""], correct: "Hij riep: \"Kom hier!\"", hint: "Directe rede na de dubbele punt." },
-            { instr: "Voltooid deelwoord", q: "Heb jij het raam (blussen)?", options: ["geblust", "geblusd", "bluste", "geblussen"], correct: "geblust", hint: "S zit in 't kofschip." },
-            { instr: "Meervoud", q: "De (giraffe) rennen over de savanne.", options: ["giraffes", "giraf's", "giraffen", "girafes"], correct: "giraffes", hint: "Dieren uit verre landen op -s." },
-            { instr: "Spelling", q: "Het is <b>'s ochtends</b> vaak koud.", options: ["'s ochtends", "sochtends", "s'ochtends", "s ochtends"], correct: "'s ochtends", hint: "Let op de apostrof." },
-            { instr: "Spelling", q: "Ik vind dat <b>onmiddellijk</b> goed.", options: ["onmiddellijk", "onmidellijk", "onmiddelijk", "onmidelijk"], correct: "onmiddellijk", hint: "Dubbel m, dubbel l." },
-            { instr: "Grammatica", q: "Ik heb mijn tas (leggen).", options: ["gelegd", "geleid", "gelegt", "gelecht"], correct: "gelegd", hint: "Leggen - legde - gelegd." },
-            { instr: "Spelling", q: "Wij gaan naar de (bioscoop).", options: ["bioscoop", "bijoscoop", "bioskoop", "bijoskoop"], correct: "bioscoop", hint: "Spelling met i en c." },
-            { instr: "Meervoud", q: "Er staan veel (auto) op de weg.", options: ["auto's", "autos", "autoen", "auto-s"], correct: "auto's", hint: "Lange klank aan eind? Apostrof s." },
-            { instr: "Tijd", q: "De trein (vertrekken) over vijf minuten.", options: ["vertrekt", "vertrek", "vertrok", "vertreken"], correct: "vertrekt", hint: "TT, hij-vorm: stam + t." }
+        // DATABASE - Leerjaar 6 (0F/1F)
+        const db_l6 = [
+            { instr: "Spelling", q: "Ik moet even naar de wi...el.", options: ["nk", "ngk", "ng", "k"], correct: "nk" },
+            { instr: "Meervoud", q: "Er liggen twee (ei) in de koelkast.", options: ["eieren", "eien", "eis", "eijeren"], correct: "eieren" },
+            { instr: "Werkwoordspelling", q: "Mijn zusje (fietsen) elke dag naar school.", options: ["fietst", "fiets", "fietstet", "gefietst"], correct: "fietst" },
+            ...createQuestions("L6", 97)
         ];
-        for(let i=11; i<=100; i++) {
-            db_l7.push({ instr: "Algemeen L7", q: `Vraag ${i} voor leerjaar 7: Test je kennis.`, options: ["Antwoord A", "Antwoord B", "Antwoord C", "Antwoord D"], correct: "Antwoord A", hint: "Oefening baart kunst." });
-        }
+
+        // DATABASE - Leerjaar 7 (1F)
+        const db_l7 = [
+            { instr: "Werkwoordspelling (VT)", q: "De jongen (verhuizen) vorig jaar.", options: ["verhuisde", "verhuiste", "verhuisden", "verhuist"], correct: "verhuisde" },
+            { instr: "Aanhalingstekens", q: "Welke zin is correct?", options: ["Hij riep: \"Kom hier!\"", "\"Hij riep:\" Kom hier!", "Hij riep: Kom hier!", "Hij riep \"Kom hier!\""], correct: "Hij riep: \"Kom hier!\"" },
+            { instr: "Voltooid deelwoord", q: "Heb jij het raam (blussen)?", options: ["geblust", "geblusd", "bluste", "geblussen"], correct: "geblust" },
+            ...createQuestions("L7", 97)
+        ];
+
+        // DATABASE - Leerjaar 8 (1F-2F)
+        const db_l8_1f2f = [
+            { instr: "Dictee", q: "De fietser reed per ... tegen de paal.", options: ["ongeluk", "ongeluck", "onngeluk", "ongelluk"], correct: "ongeluk" },
+            { instr: "Meervoud", q: "Onze (sleutel) liggen nog binnen.", options: ["sleutels", "sleutelen", "sleutel's", "sleuteltjes"], correct: "sleutels" },
+            { instr: "Interpunctie", q: "Kies de zin met de juiste komma's.", options: ["Ik ga morgen, denk ik, naar de film.", "Ik ga morgen denk ik, naar de film.", "Ik ga, morgen denk ik naar de film.", "Ik ga morgen denk ik naar, de film."], correct: "Ik ga morgen, denk ik, naar de film." },
+            ...createQuestions("L8 1F-2F", 97)
+        ];
+
+        // DATABASE - Leerjaar 8 (3F)
+        const db_l8_3f = [
+            { instr: "Werkwoordspelling", q: "De overheid (subsidiëren) de nieuwe plannen.", options: ["subsidieert", "subsidieerd", "subsidieeren", "gesubsidieerd"], correct: "subsidieert" },
+            { instr: "Woordenschat", q: "Wat is een synoniem voor 'incidenteel'?", options: ["af en toe", "vaak", "nooit", "altijd"], correct: "af en toe" },
+            { instr: "Stijl", q: "Welke zin is het meest zakelijk?", options: ["Ik verzoek u om een reactie.", "Zou je me even kunnen terugbellen?", "Ik wil dat je reageert.", "Reageer effe op mijn mail."], correct: "Ik verzoek u om een reactie." },
+            ...createQuestions("L8 3F", 97)
+        ];
 
         let currentQuestions = [];
-        let answers = {}; // Houdt bij welke vraag beantwoord is
+        let answers = {};
         let studentName = "";
-        let selectedGrade = "";
-        let score = 0;
+        let selectedLevel = "";
 
         function shuffle(array) {
             let currentIndex = array.length, randomIndex;
@@ -150,7 +157,7 @@
         function startQuiz() {
             const nameInput = document.getElementById('student-name');
             studentName = nameInput.value.trim();
-            selectedGrade = document.getElementById('grade-select').value;
+            selectedLevel = document.getElementById('grade-select').value;
 
             if (studentName.length < 3) {
                 nameInput.classList.add('border-red-500');
@@ -159,14 +166,26 @@
             }
 
             document.getElementById('display-name').innerText = studentName;
-            document.getElementById('display-grade').innerText = `Groep ${parseInt(selectedGrade) + 2} (L${selectedGrade})`;
+            
+            const levelNames = {
+                "6": "Leerjaar 6 (0F/1F)",
+                "7": "Leerjaar 7 (1F)",
+                "8_1f2f": "Leerjaar 8 (1F-2F)",
+                "8_3f": "Leerjaar 8 (3F)"
+            };
+            document.getElementById('display-grade').innerText = levelNames[selectedLevel];
+            
             document.getElementById('setup-container').classList.add('hidden');
             document.getElementById('quiz-ui').classList.remove('hidden');
             document.getElementById('sticky-submit').classList.remove('hidden');
 
-            const sourceDb = selectedGrade === "6" ? db_l6 : db_l7;
+            let sourceDb;
+            if(selectedLevel === "6") sourceDb = db_l6;
+            else if(selectedLevel === "7") sourceDb = db_l7;
+            else if(selectedLevel === "8_1f2f") sourceDb = db_l8_1f2f;
+            else sourceDb = db_l8_3f;
+
             currentQuestions = shuffle([...sourceDb]).slice(0, 30);
-            
             renderQuestions();
             window.scrollTo(0,0);
         }
@@ -174,19 +193,17 @@
         function renderQuestions() {
             const container = document.getElementById('quiz-container');
             container.innerHTML = '';
-
             currentQuestions.forEach((item, index) => {
                 const card = document.createElement('div');
-                card.className = 'card p-6 mb-6 border-2 border-transparent relative';
+                card.className = 'card p-6 mb-6 border-2 border-transparent';
                 card.id = `q-card-${index}`;
                 
-                const shuffledOpts = shuffle([...item.options]);
-
+                const opts = shuffle([...item.options]);
                 card.innerHTML = `
                     <div class="text-xs font-bold text-gray-400 uppercase mb-2">Vraag ${index + 1} • ${item.instr}</div>
                     <p class="text-lg font-semibold text-gray-800 mb-4">${item.q}</p>
                     <div class="grid gap-2" id="options-${index}">
-                        ${shuffledOpts.map(opt => `
+                        ${opts.map(opt => `
                             <button onclick="selectOption(${index}, \`${opt}\`)" class="option-btn" data-val="${opt}">${opt}</button>
                         `).join('')}
                     </div>
@@ -197,22 +214,12 @@
 
         window.selectOption = (qIdx, val) => {
             answers[qIdx] = val;
-            
-            // UI Update
             const container = document.getElementById(`options-${qIdx}`);
-            const buttons = container.querySelectorAll('button');
-            buttons.forEach(btn => {
+            container.querySelectorAll('button').forEach(btn => {
                 btn.classList.remove('border-blue-500', 'bg-blue-50', 'font-bold');
-                if(btn.dataset.val === val) {
-                    btn.classList.add('border-blue-500', 'bg-blue-50', 'font-bold');
-                }
+                if(btn.dataset.val === val) btn.classList.add('border-blue-500', 'bg-blue-50', 'font-bold');
             });
-
-            // Card border update
-            const card = document.getElementById(`q-card-${qIdx}`);
-            card.classList.remove('unanswered-alert');
-            card.classList.add('border-blue-100');
-
+            document.getElementById(`q-card-${qIdx}`).classList.remove('unanswered-alert');
             updateProgress();
         };
 
@@ -229,26 +236,20 @@
             }
 
             if(unanswered.length > 0) {
-                const firstIdx = unanswered[0];
-                const firstCard = document.getElementById(`q-card-${firstIdx}`);
-                
-                // Markeer alle onbeantwoorde vragen
                 unanswered.forEach(idx => {
                     document.getElementById(`q-card-${idx}`).classList.add('unanswered-alert');
                 });
-
-                firstCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 
-                // Melding
-                const msg = document.createElement('div');
-                msg.className = "fixed top-10 left-1/2 -translate-x-1/2 bg-red-600 text-white px-6 py-3 rounded-full shadow-2xl z-[100] font-bold animate-bounce";
-                msg.innerText = `Oeps! Je bent nog ${unanswered.length} vraag/vragen vergeten.`;
-                document.body.appendChild(msg);
-                setTimeout(() => msg.remove(), 3000);
+                // Scroll naar de eerste onbeantwoorde vraag
+                document.getElementById(`q-card-${unanswered[0]}`).scrollIntoView({ behavior: 'smooth', block: 'center' });
                 
+                const toast = document.createElement('div');
+                toast.className = "fixed top-24 left-1/2 -translate-x-1/2 bg-red-600 text-white px-6 py-3 rounded-full shadow-2xl z-[100] font-bold";
+                toast.innerText = `Je moet nog ${unanswered.length} vragen beantwoorden!`;
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 3000);
                 return;
             }
-
             processResults();
         }
 
@@ -258,38 +259,27 @@
             document.getElementById('sticky-submit').classList.add('hidden');
             document.getElementById('final-result').classList.remove('hidden');
 
-            // Bereken score
-            score = 0;
-            let foutDetails = [];
+            let score = 0;
             currentQuestions.forEach((q, idx) => {
-                if(answers[idx] === q.correct) {
-                    score++;
-                } else {
-                    foutDetails.push(`V${idx+1}: Gekozen: ${answers[idx]}, Correct: ${q.correct}`);
-                }
+                if(answers[idx] === q.correct) score++;
             });
 
-            document.getElementById('final-score-text').innerText = `Resultaat: ${score} van de 30 goed!`;
-
-            const payload = {
-                naam: studentName,
-                leerjaar: selectedGrade,
-                score: score,
-                fouten: foutDetails.join(" | "),
-                datum: new Date().toLocaleString('nl-NL')
-            };
+            document.getElementById('final-score-text').innerText = `Score: ${score} van de 30 goed!`;
 
             try {
                 await fetch(SCRIPT_URL, {
                     method: 'POST',
                     mode: 'no-cors',
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify({
+                        naam: studentName,
+                        niveau: selectedLevel,
+                        score: score,
+                        datum: new Date().toLocaleString('nl-NL')
+                    })
                 });
-                document.getElementById('submitting-status').innerHTML = "✅ Resultaten succesvol opgeslagen in de administratie.";
-                document.getElementById('submitting-status').classList.replace('bg-blue-50', 'bg-green-50');
+                document.getElementById('submitting-status').innerHTML = "✅ Resultaten veilig opgeslagen.";
             } catch (e) {
-                document.getElementById('submitting-status').innerHTML = "⚠️ Let op: Resultaten konden niet verzonden worden. Laat je scherm aan de meester of juf zien.";
-                document.getElementById('submitting-status').classList.replace('bg-blue-50', 'bg-red-50');
+                document.getElementById('submitting-status').innerHTML = "⚠️ Kon niet opslaan, meld dit bij de juf/meester.";
             }
         }
     </script>
