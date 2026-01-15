@@ -8,18 +8,22 @@
     <style>
         html { scroll-behavior: smooth; }
         body { background-color: #f3f4f6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .question-card { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .question-card { transition: all 0.4s ease; }
         .hidden { display: none; }
-        .correct-answer-fill { background-color: #dcfce7; border-color: #22c55e; }
-        .wrong-answer-fill { background-color: #fee2e2; border-color: #ef4444; color: #b91c1c; }
-        .hint-box { animation: slideIn 0.3s ease-out; }
-        @keyframes slideIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
         
-        /* Focus stijl */
-        input:focus { border-color: #3b82f6; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2); }
+        /* Status kleuren */
+        .status-wrong { background-color: #fee2e2; border-color: #ef4444; }
+        .status-correct { background-color: #f0fdf4; border-color: #22c55e; }
+        .status-retry { background-color: #fff7ed; border-color: #f97316; }
         
-        /* Progress bar sticky bovenin */
-        .sticky-progress { position: sticky; top: 0; z-index: 50; }
+        .stat-bar { height: 12px; border-radius: 6px; background: #e5e7eb; overflow: hidden; }
+        .stat-fill { height: 100%; transition: width 1s ease-out; }
+        
+        .answer-opt:focus, input:focus { outline: 2px solid #3b82f6; outline-offset: 2px; }
+        
+        /* Animatie voor feedback */
+        @keyframes popIn { 0% { transform: scale(0.9); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        .pop-in { animation: popIn 0.3s ease-out; }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -27,8 +31,8 @@
 <div id="app" class="max-w-4xl mx-auto bg-white shadow-xl rounded-2xl overflow-hidden">
     <!-- Header -->
     <header class="bg-blue-600 p-6 text-white text-center">
-        <h1 class="text-2xl font-bold">IEP Toets: Taalverzorging 1F-2F</h1>
-        <p class="text-blue-100">Groep 7 - Toetsomgeving</p>
+        <h1 class="text-2xl font-bold italic">IEP Toets: Taalverzorging</h1>
+        <p class="text-blue-100">Groep 7 - Spelling, Werkwoorden & Interpunctie</p>
     </header>
 
     <!-- Start Scherm -->
@@ -40,27 +44,28 @@
         <button onclick="startTest()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-12 rounded-full transition duration-300 transform hover:scale-105 shadow-lg text-lg">
             Start de Toets (40 vragen)
         </button>
-        <p class="mt-6 text-sm text-gray-500 italic">De vragen worden automatisch gecentreerd tijdens het maken.</p>
+        <p class="mt-6 text-sm text-gray-500 italic">De toets bevat een mix van meerkeuze- en invulvragen.</p>
     </div>
 
     <!-- Quiz Scherm -->
     <div id="quiz-screen" class="hidden">
-        <div class="bg-gray-100 p-2 sticky-progress shadow-sm border-b border-gray-200">
-            <div class="flex justify-between items-center mb-1 px-4">
+        <!-- Voortgangsbalk sticky bovenaan -->
+        <div class="bg-white p-4 sticky top-0 z-50 shadow-md border-b border-gray-200">
+            <div class="flex justify-between items-center mb-1">
                 <span class="text-xs font-bold text-gray-600 uppercase">Voortgang</span>
                 <span id="progress-text" class="text-xs font-bold text-blue-600">0 / 40</span>
             </div>
-            <div class="bg-gray-300 h-3 w-full rounded-full overflow-hidden">
-                <div id="progress-bar" class="bg-green-500 h-3 w-0 transition-all duration-500 ease-out"></div>
+            <div class="bg-gray-200 h-3 w-full rounded-full overflow-hidden">
+                <div id="progress-bar" class="bg-green-500 h-3 w-0 transition-all duration-300"></div>
             </div>
         </div>
 
-        <div id="questions-container" class="p-6 space-y-24 py-32">
+        <div id="questions-container" class="p-6 space-y-16 bg-gray-50 pb-32">
             <!-- Vragen worden hier geladen -->
         </div>
 
-        <div class="p-12 border-t border-gray-100 flex flex-col items-center bg-gray-50">
-            <div id="validation-msg" class="text-red-600 mb-6 hidden font-bold text-lg bg-red-50 p-4 rounded-lg border border-red-100"></div>
+        <div class="p-8 border-t border-gray-200 flex flex-col items-center bg-white fixed bottom-0 left-0 right-0 z-40 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] lg:relative lg:shadow-none">
+            <div id="validation-msg" class="text-red-600 mb-4 hidden font-bold text-lg bg-red-50 p-3 rounded-lg border border-red-100 w-full text-center"></div>
             <button id="submit-btn" onclick="validateAndSubmit()" class="bg-green-600 hover:bg-green-700 text-white font-black py-4 px-16 rounded-full transition duration-300 shadow-xl text-xl uppercase tracking-wider transform hover:scale-105">
                 Toets Inleveren
             </button>
@@ -68,70 +73,167 @@
     </div>
 
     <!-- Resultaat Scherm -->
-    <div id="result-screen" class="hidden p-12 text-center min-h-[400px] flex flex-col justify-center items-center">
-        <div class="mb-6 text-7xl animate-bounce">🏆</div>
-        <h2 class="text-4xl font-extrabold mb-4 text-gray-800">Bedankt, <span id="display-name" class="text-blue-600"></span>!</h2>
-        <p class="text-xl text-gray-600 mb-8">Je toets is succesvol afgerond en opgeslagen.</p>
-        <div class="bg-blue-600 p-8 rounded-2xl shadow-inner text-white">
-            <p class="text-lg opacity-90 mb-1">Jouw resultaat:</p>
-            <p id="final-score" class="text-5xl font-black">0 / 40</p>
+    <div id="result-screen" class="hidden p-8 md:p-12">
+        <div class="text-center mb-10">
+            <div class="text-6xl mb-4">🎉</div>
+            <h2 class="text-3xl font-extrabold text-gray-800">Resultaten voor <span id="display-name" class="text-blue-600"></span></h2>
+        </div>
+
+        <div class="space-y-6 mb-12">
+            <div id="stat-spelling" class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                <div class="flex justify-between mb-2 font-bold"><span>Spelling</span><span id="score-spelling">0/15</span></div>
+                <div class="stat-bar"><div id="bar-spelling" class="stat-fill bg-blue-500"></div></div>
+            </div>
+            <div id="stat-werkwoorden" class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                <div class="flex justify-between mb-2 font-bold"><span>Werkwoordspelling</span><span id="score-werkwoorden">0/15</span></div>
+                <div class="stat-bar"><div id="bar-werkwoorden" class="stat-fill bg-purple-500"></div></div>
+            </div>
+            <div id="stat-interpunctie" class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                <div class="flex justify-between mb-2 font-bold"><span>Interpunctie</span><span id="score-interpunctie">0/10</span></div>
+                <div class="stat-bar"><div id="bar-interpunctie" class="stat-fill bg-orange-500"></div></div>
+            </div>
+        </div>
+
+        <div class="bg-blue-50 p-6 rounded-2xl border-2 border-blue-100 mb-8">
+            <h4 class="font-black text-blue-800 uppercase tracking-wide mb-3 text-sm">Feedback van de meester:</h4>
+            <div class="space-y-4">
+                <p id="compliment-text" class="text-gray-800 font-medium"></p>
+                <div id="tip-box" class="bg-white p-5 rounded-xl border-l-4 border-yellow-400 shadow-sm">
+                    <p class="font-bold text-yellow-800 mb-1">💡 Tip voor jou:</p>
+                    <p id="tip-text" class="text-gray-700 italic"></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center">
+            <button onclick="location.reload()" class="bg-blue-600 text-white font-bold py-3 px-8 rounded-full shadow-lg">Opnieuw proberen</button>
         </div>
     </div>
 </div>
 
 <script>
+// COMPLETE DATABASE: 100 VRAGEN
+// Met caseSensitive: true voor interpunctie/hoofdlettervragen
 const rawDatabase = [
-    { q: "Fienes lievelingsfruit is mang...", instr: "Wat hoort op de lege plek?", type: "MC", options: ["o", "oo", "o's"], correct: "o", hint: "Denk aan de klinker aan het eind van een woord." },
-    { q: "Ik ben altijd mijn ... kwijt. (sleutel)", instr: "Vul het meervoud in van het woord tussen haakjes.", type: "OPEN", correct: "sleutels", hint: "Het gaat om meer dan één sleutel." },
-    { q: "Jim wordt vandaag a...t jaar.", instr: "Wat hoort op de lege plek?", type: "MC", options: ["ch", "gh", "gt"], correct: "ch", hint: "Lange klank + cht, behalve bij legt, zegt, ligt." },
-    { q: "Mijn beste vriendin had veel baga...e meegenomen.", instr: "Vul het woord aan.", type: "OPEN", correct: "bagage", hint: "Het woord komt uit het Frans." },
-    { q: "In de woestijn ligt een oa...e.", instr: "Vul het woord aan.", type: "OPEN", correct: "oase", hint: "Een vruchtbare plek in de woestijn." },
-    { q: "Tijdens de regen schuilen we onder het viadu...t.", instr: "Wat hoort op de lege plek?", type: "OPEN", correct: "viaduct", hint: "Het eindigt op een harde klank." },
-    { q: "Ik heb geen idee hoe dat ... heet. (hond)", instr: "Vul het verkleinwoord in van het woord tussen haakjes.", type: "OPEN", correct: "hondje", hint: "Maak het woord klein." },
-    { q: "Dabir leest nu veel. Toen hij jonger was, ... hij vooral stripboeken. (lezen)", instr: "Vul de juiste vorm van het werkwoord in.", type: "OPEN", correct: "las", hint: "Gebruik de verleden tijd." },
-    { q: "Er zijn te veel ... (mogelijkheid)", instr: "Meervoud van het woord tussen haakjes.", type: "OPEN", correct: "mogelijkheden", hint: "Meervoud van woorden op -heid is -heden." },
-    { q: "Toine en Ilse ... van een baan in de muziek. (dromen)", instr: "Juiste vorm van het werkwoord.", type: "OPEN", correct: "dromen", hint: "Het onderwerp is meervoud." },
-    { q: "Mijn zus is het meest ... van ons allemaal. (eigenwijs)", instr: "Overtreffende trap.", type: "OPEN", correct: "eigenwijs", hint: "Kies de juiste vorm." },
-    { q: "Welke zin is juist?", instr: "Hoofdletters en interpunctie.", type: "MC", options: ["Daarna vroeg mijn moeder: \"Wat wil je eten?\"", "Daarna vroeg mijn moeder: \"wat wil je eten?\"", "daarna vroeg mijn moeder: \"Wat wil je eten?\""], correct: "Daarna vroeg mijn moeder: \"Wat wil je eten?\"", hint: "Een citaat begint met een hoofdletter." },
-    { q: "De ... kinderen spelen buiten. (klein)", instr: "Bijvoeglijk naamwoord.", type: "OPEN", correct: "kleine", hint: "Verbuiging van klein." },
-    { q: "De bakker ... elke ochtend vers brood. (bakken)", instr: "Tegenwoordige tijd.", type: "OPEN", correct: "bakt", hint: "Stam + t." },
-    { q: "Wij ... gisteren naar de film. (gaan)", instr: "Verleden tijd meervoud.", type: "OPEN", correct: "gingen", hint: "Sterk werkwoord." },
-    { q: "Het is een ... tafel. (hout)", instr: "Stoffelijk bijvoeglijk naamwoord.", type: "OPEN", correct: "houten", hint: "Eindigt op -en." },
-    { q: "In de winter ... het vaak. (sneeuwen)", instr: "Tegenwoordige tijd.", type: "OPEN", correct: "sneeuwt", hint: "Stam + t." },
-    { q: "De ... vliegen in de lucht. (bij)", instr: "Meervoud.", type: "OPEN", correct: "bijen", hint: "Meervoudsvorm." },
-    { q: "Ik ... gisteren een appel. (eten)", instr: "Verleden tijd.", type: "OPEN", correct: "at", hint: "Sterk werkwoord." },
-    { q: "De ... blaft naar de kat. (hond)", instr: "Wat blaft er?", type: "OPEN", correct: "hond", hint: "Het dier." },
-    { q: "Er staan drie ... in de vaas. (bloem)", instr: "Meervoud.", type: "OPEN", correct: "bloemen", hint: "Meervoud." },
-    { q: "Het ... kindje slaapt. (lief)", instr: "Bijvoeglijk naamwoord.", type: "OPEN", correct: "lieve", hint: "f wordt v." },
-    { q: "Wij ... elke dag een appel. (eten)", instr: "Tegenwoordige tijd meervoud.", type: "OPEN", correct: "eten", hint: "Meervoud." },
-    { q: "Gisteren ... de zon fel. (schijnen)", instr: "Verleden tijd.", type: "OPEN", correct: "scheen", hint: "Sterk werkwoord." },
-    { q: "De ... rijden op de weg. (auto)", instr: "Meervoud.", type: "OPEN", correct: "auto's", hint: "Met apostrof s." },
-    { q: "Ik ... mijn tanden elke dag. (poetsen)", instr: "Tegenwoordige tijd.", type: "OPEN", correct: "poets", hint: "Stam." },
-    { q: "De weid...vogels vliegen laag.", instr: "Tussen-n of niet?", type: "MC", options: ["e", "en"], correct: "e", hint: "Uitzondering." },
-    { q: "De meesters zitten in de lerar...kamer.", instr: "Tussen-n of niet?", type: "MC", options: ["e", "en"], correct: "en", hint: "Samenstelling." },
-    { q: "Het ... huis staat te koop. (groot)", instr: "Bijvoeglijk naamwoord.", type: "OPEN", correct: "grote", hint: "Verbuiging." },
-    { q: "Hij ... een glas water. (drinken)", instr: "Tegenwoordige tijd.", type: "OPEN", correct: "drinkt", hint: "Stam + t." },
-    { q: "De ... zijn erg scherp. (mes)", instr: "Meervoud.", type: "OPEN", correct: "messen", hint: "Dubbele medeklinker." },
-    { q: "Gisteren ... ik een cadeau. (krijgen)", instr: "Verleden tijd.", type: "OPEN", correct: "kreeg", hint: "Sterk werkwoord." },
-    { q: "De ... zingen een lied. (vogel)", instr: "Meervoud.", type: "OPEN", correct: "vogels", hint: "Meervoud met s." },
-    { q: "Ik ... een mooie tekening. (maken)", instr: "Tegenwoordige tijd.", type: "OPEN", correct: "maak", hint: "Stam." },
-    { q: "De ... is erg hoog. (berg)", instr: "Wat is hoog?", type: "OPEN", correct: "berg", hint: "Enkelvoud." },
-    { q: "Zij ... een appel. (eten)", instr: "Tegenwoordige tijd enkelvoud.", type: "OPEN", correct: "eet", hint: "Stam + t." },
-    { q: "De ... vallen in de herfst. (blad)", instr: "Meervoud.", type: "OPEN", correct: "bladeren", hint: "Onregelmatig meervoud." },
-    { q: "Hij ... de deur dicht. (doen)", instr: "Tegenwoordige tijd.", type: "OPEN", correct: "doet", hint: "Stam + t." },
-    { q: "Het ... jongetje huilt. (arm)", instr: "Bijvoeglijk naamwoord.", type: "OPEN", correct: "arme", hint: "Verbuiging." },
-    { q: "Wij ... in de tuin. (zitten)", instr: "Tegenwoordige tijd meervoud.", type: "OPEN", correct: "zitten", hint: "Meervoud." }
+    // --- CATEGORIE 1: SPELLING (Missing letters, Meervouden, Verkleinwoorden) ---
+    { cat: "spelling", q: "Jim wordt vandaag a___t jaar.", instr: "Welke letters ontbreken?", type: "MC", options: ["ch", "g", "gt", "cht"], correct: "ch", hint: "Denk aan: ligt, legt, zegt." },
+    { cat: "spelling", q: "De pen van de juf is lee___.", instr: "Welke letter ontbreekt?", type: "MC", options: ["g", "ch", "k"], correct: "g", hint: "Maak het woord langer: le...e." },
+    { cat: "spelling", q: "Mijn band is lek, wat een pe___!", instr: "Welke letters ontbreken?", type: "MC", options: ["ch", "g", "gg"], correct: "ch", hint: "Korte klank + ch." },
+    { cat: "spelling", q: "Fienes lievelingsfruit is een mang___.", instr: "Welke letter ontbreekt?", type: "MC", options: ["o", "oo", "oh"], correct: "o", hint: "Je hoort een lange o, maar je schrijft er één." },
+    { cat: "spelling", q: "Dat is een ___ besluit. (belachelijk)", instr: "Hoe schrijf je dit woord?", type: "MC", options: ["belachelijk", "belagelijk", "bellachelijk"], correct: "belachelijk", hint: "Met ch en lijk." },
+    { cat: "spelling", q: "De auto rijdt door de ___ (tunnel)", instr: "Hoe schrijf je dit woord?", type: "MC", options: ["tunnel", "tunel", "tunnul"], correct: "tunnel", hint: "Korte u, dus dubbel n." },
+    { cat: "spelling", q: "Mijn vriendin had veel baga___e.", instr: "Welke letters ontbreken?", type: "MC", options: ["ge", "zje", "je"], correct: "ge", hint: "Frans leenwoord." },
+    { cat: "spelling", q: "In de woestijn ligt een oa___e.", instr: "Welke letter ontbreekt?", type: "MC", options: ["s", "z", "c"], correct: "s", hint: "Je hoort een z, maar schrijft een s." },
+    { cat: "spelling", q: "Ik vind dat echt niet ___ (eerlijk)", instr: "Hoe schrijf je dit woord?", type: "MC", options: ["eerlijk", "eerluk", "eerlek"], correct: "eerlijk", hint: "Achtervoegsel -lijk." },
+    { cat: "spelling", q: "Mijn oom is ___ (elektricien)", instr: "Hoe schrijf je dit beroep?", type: "MC", options: ["elektricien", "elekticien", "electricien"], correct: "elektricien", hint: "Met een k en c." },
+    { cat: "spelling", q: "Dat is een ___ verhaal. (officieel)", instr: "Hoe schrijf je dit woord?", type: "MC", options: ["officieel", "oficieel", "officiëel"], correct: "officieel", hint: "Dubbel f, geen trema." },
+    { cat: "spelling", q: "Dat is een ___ idee! (fantastisch)", instr: "Kies de juiste spelling.", type: "MC", options: ["fantastisch", "fantasties", "fantastis"], correct: "fantastisch", hint: "Woord op -isch." },
+    { cat: "spelling", q: "Ik ga onmidd___ijk naar huis.", instr: "Welke letters ontbreken?", type: "MC", options: ["ell", "el", "al"], correct: "ell", hint: "Onmiddellijk: dubbel d, dubbel l." },
+    { cat: "spelling", q: "De ___ zoemen om de bloemen. (bij)", instr: "Wat is het meervoud?", type: "MC", options: ["bijen", "bije", "bij's"], correct: "bijen", hint: "Standaard meervoud op -en." },
+    { cat: "spelling", q: "Ik neem twee ___ (paraplu)", instr: "Wat is het meervoud?", type: "MC", options: ["paraplu's", "paraplus", "paraplues"], correct: "paraplu's", hint: "Lange klinker aan het eind: 's." },
+    { cat: "spelling", q: "De ___ rennen door de wei. (kalf)", instr: "Wat is het meervoud?", type: "MC", options: ["kalveren", "kalven", "kalfen"], correct: "kalveren", hint: "Net als bij 'kinderen' of 'eieren'." },
+    { cat: "spelling", q: "Zij heeft twee ___ (pony)", instr: "Wat is het meervoud?", type: "MC", options: ["pony's", "ponies", "ponys"], correct: "pony's", hint: "Eindigt op y, dus 's." },
+    { cat: "spelling", q: "Er liggen drie ___ op het bord. (perzik)", instr: "Wat is het meervoud?", type: "MC", options: ["perziken", "perzikken", "perzix"], correct: "perziken", hint: "Klemtoon niet op laatste lettergreep, dus één k." },
+    { cat: "spelling", q: "De ___ vliegen naar het zuiden. (zwaluw)", instr: "Wat is het meervoud?", type: "MC", options: ["zwaluwen", "zwaluws", "zwaaluwen"], correct: "zwaluwen", hint: "Geen dubbele l." },
+    { cat: "spelling", q: "Wij eten vanavond ___ (aardappel)", instr: "Wat is het meervoud?", type: "MC", options: ["aardappelen", "aardappellen", "aardappele"], correct: "aardappelen", hint: "Eindigt op -en." },
+    { cat: "spelling", q: "Ik ben altijd mijn ___ kwijt. (sleutel)", instr: "Vul het meervoud in.", type: "OPEN", correct: "sleutels", hint: "Gewoon een s erachter." },
+    { cat: "spelling", q: "Er vallen veel ___ van de boom. (blad)", instr: "Vul het meervoud in.", type: "OPEN", correct: "bladeren", hint: "Het meervoud is onregelmatig." },
+    { cat: "spelling", q: "Het ___ hek is roestig. (ijzer)", instr: "Vul het stoffelijk bijv. nw. in.", type: "OPEN", correct: "ijzeren", hint: "Stoffelijk bijvoeglijk naamwoord eindigt op -en." },
+    { cat: "spelling", q: "De ___ brengt de post. (postbode)", instr: "Maak de samenstelling.", type: "OPEN", correct: "postbode", hint: "Post + bode." },
+    { cat: "spelling", q: "Hij bestelt een ___ (menu)", instr: "Vul het verkleinwoord in.", type: "OPEN", correct: "menuutje", hint: "Verdubbel de klinker." },
+    { cat: "spelling", q: "De ___ staan in de wei. (koe)", instr: "Vul het meervoud in.", type: "OPEN", correct: "koeien", hint: "Denk aan de i." },
+    { cat: "spelling", q: "Ik heb veel ___ (idee)", instr: "Vul het meervoud in.", type: "OPEN", correct: "ideeën", hint: "Meervoud met trema." },
+    { cat: "spelling", q: "Er liggen twee ___ op mijn bed. (kussen)", instr: "Vul het meervoud in.", type: "OPEN", correct: "kussens", hint: "Meervoud met s." },
+    { cat: "spelling", q: "Dat is een ___ ketting. (goud)", instr: "Vul het stoffelijk bijv. nw. in.", type: "OPEN", correct: "gouden", hint: "Eindigt op -en." },
+    { cat: "spelling", q: "Ik zie een klein ___ (koning)", instr: "Vul het verkleinwoord in.", type: "OPEN", correct: "koninkje", hint: "ng wordt nk." },
+    { cat: "spelling", q: "Zij heeft drie ___ (tante)", instr: "Vul het meervoud in.", type: "OPEN", correct: "tantes", hint: "Meervoud met s." },
+    { cat: "spelling", q: "Ik lust graag ___ (oliebol)", instr: "Vul het meervoud in.", type: "OPEN", correct: "oliebollen", hint: "Korte klinker, dus dubbele l." },
+    { cat: "spelling", q: "De ___ zijn erg scherp. (mes)", instr: "Vul het meervoud in.", type: "OPEN", correct: "messen", hint: "Korte klinker, dus dubbele s." },
+    { cat: "spelling", q: "Er zitten twee ___ in de tas. (boterham)", instr: "Vul het meervoud in.", type: "OPEN", correct: "boterhammen", hint: "Korte klinker, dus dubbele m." },
+    { cat: "spelling", q: "Dat is een ___ vaas. (glas)", instr: "Vul het stoffelijk bijv. nw. in.", type: "OPEN", correct: "glazen", hint: "Van glas." },
+    { cat: "spelling", q: "Ik heb een ___ fiets. (nieuw)", instr: "Vul het bijvoeglijk naamwoord in.", type: "OPEN", correct: "nieuwe", hint: "Met een e erachter." },
+    { cat: "spelling", q: "De ___ vliegen in de lucht. (duif)", instr: "Vul het meervoud in.", type: "OPEN", correct: "duiven", hint: "F wordt V." },
+    { cat: "spelling", q: "Ik heb twee ___ (lens)", instr: "Vul het meervoud in.", type: "OPEN", correct: "lenzen", hint: "S wordt Z." },
+    { cat: "spelling", q: "Er staan veel ___ in de tekst. (fout)", instr: "Vul het meervoud in.", type: "OPEN", correct: "fouten", hint: "Meervoud op -en." },
+
+    // --- CATEGORIE 2: WERKWOORDEN ---
+    { cat: "werkwoorden", q: "Dabir ___ vroeger veel strips. (lezen)", instr: "Kies de verleden tijd.", type: "MC", options: ["las", "leesde", "laas"], correct: "las", hint: "Sterk werkwoord, de klinker verandert." },
+    { cat: "werkwoorden", q: "Jij ___ niet veel tijd aan huiswerk. (besteden)", instr: "Kies de tegenwoordige tijd.", type: "MC", options: ["besteedt", "besteed", "besteedde"], correct: "besteedt", hint: "Stam + t, want het is 'jij'." },
+    { cat: "werkwoorden", q: "Pas op, dat bankje is pas ___ (verven)", instr: "Kies het voltooid deelwoord.", type: "MC", options: ["geverfd", "geverft", "verfde"], correct: "geverfd", hint: "De v zit niet in 't kofschip x, dus een d." },
+    { cat: "werkwoorden", q: "Zij ___ gisteren naar huis. (fietsen)", instr: "Kies de verleden tijd.", type: "MC", options: ["fietsten", "fietste", "fietsen"], correct: "fietsten", hint: "Meervoud, en s zit in 't kofschip." },
+    { cat: "werkwoorden", q: "De brandweer ___ de brand. (blussen)", instr: "Kies de verleden tijd.", type: "MC", options: ["bluste", "blusde", "geblust"], correct: "bluste", hint: "S zit in 't kofschip." },
+    { cat: "werkwoorden", q: "Boy ___ altijd zijn vrienden. (verraden)", instr: "Kies de tegenwoordige tijd.", type: "MC", options: ["verraadt", "verraad", "verradt"], correct: "verraadt", hint: "Stam (verraad) + t." },
+    { cat: "werkwoorden", q: "Wij ___ de hele weg. (lachen)", instr: "Kies de verleden tijd.", type: "MC", options: ["lachten", "lachte", "gelachen"], correct: "lachten", hint: "Sterk of zwak? Ch zit in kofschip." },
+    { cat: "werkwoorden", q: "Heb jij dat boek al ___? (lezen)", instr: "Kies het voltooid deelwoord.", type: "MC", options: ["gelezen", "geleest", "las"], correct: "gelezen", hint: "Sterk werkwoord." },
+    { cat: "werkwoorden", q: "Mijn vader ___ vroeger in een koor. (zingen)", instr: "Kies de verleden tijd.", type: "MC", options: ["zong", "zingde", "zongt"], correct: "zong", hint: "Sterk werkwoord." },
+    { cat: "werkwoorden", q: "Jij ___ de wedstrijd gewonnen! (hebben)", instr: "Kies de persoonsvorm.", type: "MC", options: ["hebt", "heb", "heeft"], correct: "hebt", hint: "Jij hebt." },
+    { cat: "werkwoorden", q: "Hij ___ een brief aan opa. (schrijven)", instr: "Kies de tegenwoordige tijd.", type: "MC", options: ["schrijft", "schrijfd", "schrijf"], correct: "schrijft", hint: "Stam + t." },
+    { cat: "werkwoorden", q: "Ik ___ gisteren een taart. (bakken)", instr: "Kies de verleden tijd.", type: "MC", options: ["bakte", "bakde", "gebakken"], correct: "bakte", hint: "K zit in 't kofschip." },
+    { cat: "werkwoorden", q: "Wij ___ elke dag naar school. (lopen)", instr: "Kies de tegenwoordige tijd.", type: "MC", options: ["lopen", "loopt", "liepen"], correct: "lopen", hint: "Wij-vorm." },
+    { cat: "werkwoorden", q: "Zij ___ gisteren op het feest. (dansen)", instr: "Kies de verleden tijd.", type: "MC", options: ["danste", "dansde", "danstte"], correct: "danste", hint: "S zit in 't kofschip." },
+    { cat: "werkwoorden", q: "Ik ___ het antwoord niet. (weten)", instr: "Kies de verleden tijd.", type: "MC", options: ["wist", "weetde", "wiste"], correct: "wist", hint: "Sterk werkwoord." },
+    { cat: "werkwoorden", q: "Wij ___ gisteren patat. (eten)", instr: "Kies de verleden tijd.", type: "MC", options: ["aten", "eetten", "at"], correct: "aten", hint: "Sterk werkwoord meervoud." },
+    { cat: "werkwoorden", q: "Ik ___ mijn kamer op. (ruimen)", instr: "Kies de tegenwoordige tijd.", type: "MC", options: ["ruim", "ruimt", "ruimd"], correct: "ruim", hint: "Alleen de stam bij 'ik'." },
+    { cat: "werkwoorden", q: "Dat is nog nooit ___ (gebeuren)", instr: "Kies het voltooid deelwoord.", type: "MC", options: ["gebeurd", "gebeurt", "gebeurdt"], correct: "gebeurd", hint: "Het kofschip: r zit er niet in -> d." },
+    { cat: "werkwoorden", q: "Het ijs ___ in de zon. (smelten)", instr: "Kies de tegenwoordige tijd.", type: "MC", options: ["smelt", "smeldt", "smeltt"], correct: "smelt", hint: "Stam is smelt (eindigt al op t)." },
+    { cat: "werkwoorden", q: "Hij ___ de bal. (vangen)", instr: "Kies de tegenwoordige tijd.", type: "MC", options: ["vangt", "vong", "vangd"], correct: "vangt", hint: "Stam + t." },
+    { cat: "werkwoorden", q: "Toine en Ilse ___ van muziek. (dromen)", instr: "Vul de tegenwoordige tijd in.", type: "OPEN", correct: "dromen", hint: "Meervoud." },
+    { cat: "werkwoorden", q: "Toen ik klein was, ___ ik me vaak. (verkleden)", instr: "Vul de verleden tijd in.", type: "OPEN", correct: "verkleedde", hint: "Stam (verkleed) + de." },
+    { cat: "werkwoorden", q: "Het ___ gisteren heel hard. (waaien)", instr: "Vul de verleden tijd in.", type: "OPEN", correct: "waaide", hint: "Stam + de." },
+    { cat: "werkwoorden", q: "Meyra ___ pas toen ze hem zag. (kalmeren)", instr: "Vul de verleden tijd in.", type: "OPEN", correct: "kalmeerde", hint: "Stam + de." },
+    { cat: "werkwoorden", q: "De hond ___ naar de postbode. (blaffen)", instr: "Vul de verleden tijd in.", type: "OPEN", correct: "blafte", hint: "F zit in 't kofschip." },
+    { cat: "werkwoorden", q: "Hij ___ zijn tanden. (poetsen)", instr: "Vul de tegenwoordige tijd in.", type: "OPEN", correct: "poetst", hint: "Stam + t." },
+    { cat: "werkwoorden", q: "De zon ___ de hele dag. (schijnen)", instr: "Vul de verleden tijd in.", type: "OPEN", correct: "scheen", hint: "Sterk werkwoord." },
+    { cat: "werkwoorden", q: "Hij ___ de bal in het doel. (schoppen)", instr: "Vul de tegenwoordige tijd in.", type: "OPEN", correct: "schopt", hint: "Stam + t." },
+    { cat: "werkwoorden", q: "De juf ___ een verhaal voor. (lezen)", instr: "Vul de tegenwoordige tijd in.", type: "OPEN", correct: "leest", hint: "Stam + t." },
+    { cat: "werkwoorden", q: "Wij ___ gisteren een ijsje. (kopen)", instr: "Vul de verleden tijd in.", type: "OPEN", correct: "kochten", hint: "Onregelmatig werkwoord." },
+    { cat: "werkwoorden", q: "Ik ___ heel hard naar de overkant. (rennen)", instr: "Vul de verleden tijd in.", type: "OPEN", correct: "rende", hint: "Stam + de." },
+    { cat: "werkwoorden", q: "Hij ___ zijn huiswerk. (maken)", instr: "Vul de tegenwoordige tijd in.", type: "OPEN", correct: "maakt", hint: "Stam + t." },
+    { cat: "werkwoorden", q: "De kinderen ___ buiten. (spelen)", instr: "Vul de verleden tijd in.", type: "OPEN", correct: "speelden", hint: "Stam + den." },
+    { cat: "werkwoorden", q: "Mijn oma ___ een trui. (breien)", instr: "Vul de tegenwoordige tijd in.", type: "OPEN", correct: "breit", hint: "Stam + t." },
+    { cat: "werkwoorden", q: "Het ___ gisteren de hele dag. (regenen)", instr: "Vul de verleden tijd in.", type: "OPEN", correct: "regende", hint: "Stam + de." },
+
+    // --- CATEGORIE 3: INTERPUNCTIE & TAALVERZORGING (Hoofdletters, leestekens) ---
+    // caseSensitive: true toegevoegd voor hoofdlettervragen
+    { cat: "interpunctie", q: "Vandaag is het ___ (donderdag)", instr: "Welk woord is juist?", type: "MC", options: ["donderdag", "Donderdag"], correct: "donderdag", hint: "Dagen van de week schrijf je met een kleine letter.", caseSensitive: true },
+    { cat: "interpunctie", q: "Mijn zus woont in ___", instr: "Welk woord is juist?", type: "MC", options: ["Groningen", "groningen"], correct: "Groningen", hint: "Plaatsnamen altijd met een hoofdletter.", caseSensitive: true },
+    { cat: "interpunctie", q: "In ___ vieren we Kerstmis.", instr: "Welk woord is juist?", type: "MC", options: ["december", "December"], correct: "december", hint: "Maanden schrijf je met een kleine letter.", caseSensitive: true },
+    { cat: "interpunctie", q: "Het is nu ___ (lente)", instr: "Welk woord is juist?", type: "MC", options: ["lente", "Lente"], correct: "lente", hint: "Seizoenen schrijf je met een kleine letter.", caseSensitive: true },
+    { cat: "interpunctie", q: "Daarna vroeg ze: ___ Wat wil je eten? ___", instr: "Welke leestekens ontbreken?", type: "MC", options: ["\" \"", "' '", ", ,"], correct: "\" \"", hint: "Aanhalingstekens bij direct spreken." },
+    { cat: "interpunctie", q: "Ik spreek een beetje ___", instr: "Welk woord is juist?", type: "MC", options: ["Frans", "frans"], correct: "Frans", hint: "Talen schrijf je met een hoofdletter.", caseSensitive: true },
+    { cat: "interpunctie", q: "Meneer ___ fietst naar zijn werk.", instr: "Welk woord is juist?", type: "MC", options: ["Reinders", "reinders"], correct: "Reinders", hint: "Achternamen met een hoofdletter.", caseSensitive: true },
+    { cat: "interpunctie", q: "Op tafel liggen: appels ___ peren en bananen.", instr: "Welk leesteken ontbreekt?", type: "MC", options: [",", ".", ":"], correct: ",", hint: "Komma in een opsomming." },
+    { cat: "interpunctie", q: "Wat een prachtige tekening___", instr: "Welk leesteken hoort aan het eind?", type: "MC", options: ["!", "?", "."], correct: "!", hint: "Het is een uitroep." },
+    { cat: "interpunctie", q: "De meester roept: ___ Kom binnen! ___", instr: "Welk leesteken ontbreekt VOOR Kom?", type: "MC", options: ["\"", ":", ","], correct: "\"", hint: "Start van het citaat." },
+    { cat: "interpunctie", q: "Hoe laat is het___", instr: "Welk leesteken hoort aan het eind?", type: "MC", options: ["?", "!", "."], correct: "?", hint: "Het is een vraag." },
+    { cat: "interpunctie", q: "Ik lees een boek van ___ (paul van loon)", instr: "Welke schrijfwijze is juist?", type: "MC", options: ["Paul van Loon", "paul van loon", "Paul Van Loon"], correct: "Paul van Loon", hint: "Voor- en achternaam met hoofdletter, tussenvoegsel klein.", caseSensitive: true },
+    { cat: "interpunctie", q: "Wij gaan naar de ___ (efteling)", instr: "Welke schrijfwijze is juist?", type: "MC", options: ["Efteling", "efteling"], correct: "Efteling", hint: "Namen van parken met een hoofdletter.", caseSensitive: true },
+    { cat: "interpunctie", q: "Zij heet ___ (anne)", instr: "Welke schrijfwijze is juist?", type: "MC", options: ["Anne", "anne"], correct: "Anne", hint: "Namen met een hoofdletter.", caseSensitive: true },
+    { cat: "interpunctie", q: "Wij gaan op vakantie naar ___ (frankrijk)", instr: "Welke schrijfwijze is juist?", type: "MC", options: ["Frankrijk", "frankrijk"], correct: "Frankrijk", hint: "Landen krijgen een hoofdletter.", caseSensitive: true },
+    { cat: "interpunctie", q: "Welke zin is juist?", instr: "Let op de hoofdletters.", type: "MC", options: ["Wij gaan naar Turkije.", "wij gaan naar turkije.", "Wij gaan naar turkije."], correct: "Wij gaan naar Turkije.", hint: "Begin van de zin en landnamen met hoofdletter.", caseSensitive: true },
+    { cat: "interpunctie", q: "Welke zin is juist?", instr: "Let op de leestekens.", type: "MC", options: ["Ik hou van rood, wit en blauw.", "Ik hou van rood wit en blauw.", "Ik hou van rood, wit, en blauw."], correct: "Ik hou van rood, wit en blauw.", hint: "Geen komma voor 'en'." },
+    { cat: "interpunctie", q: "De juf zegt: ___ Pak je boek. ___", instr: "Welke tekens ontbreken?", type: "MC", options: ["Dubbele punt en aanhalingstekens", "Alleen aanhalingstekens", "Alleen een dubbele punt"], correct: "Dubbele punt en aanhalingstekens", hint: "Voor een citaat." },
+    { cat: "interpunctie", q: "Waar woon jij___", instr: "Welk leesteken?", type: "MC", options: ["?", "!", "."], correct: "?", hint: "Vraagzin." },
+    { cat: "interpunctie", q: "Ik ben jarig op ___ (5 mei)", instr: "Welke schrijfwijze is juist?", type: "MC", options: ["5 mei", "5 Mei"], correct: "5 mei", hint: "Maanden met kleine letter.", caseSensitive: true },
+    { cat: "interpunctie", q: "Het is ___ (koud)", instr: "Welke schrijfwijze is juist?", type: "MC", options: ["koud", "Koud"], correct: "koud", hint: "Geen hoofdletter nodig midden in een zin.", caseSensitive: true },
+    { cat: "interpunctie", q: "Ik woon in de ___ (hoofdstraat)", instr: "Welke schrijfwijze is juist?", type: "MC", options: ["Hoofdstraat", "hoofdstraat"], correct: "Hoofdstraat", hint: "Straatnamen met hoofdletter.", caseSensitive: true },
+    { cat: "interpunctie", q: "Wij gaan naar ___ (opa en oma)", instr: "Welke schrijfwijze is juist?", type: "MC", options: ["opa en oma", "Opa en Oma"], correct: "opa en oma", hint: "Geen namen, dus kleine letters.", caseSensitive: true },
+    { cat: "interpunctie", q: "De hoofdstad is ___ (amsterdam)", instr: "Welke schrijfwijze is juist?", type: "MC", options: ["Amsterdam", "amsterdam"], correct: "Amsterdam", hint: "Steden met hoofdletter.", caseSensitive: true },
+    { cat: "interpunctie", q: "Ik eet graag ___ (pizza)", instr: "Welke schrijfwijze is juist?", type: "MC", options: ["pizza", "Pizza"], correct: "pizza", hint: "Eten met kleine letter.", caseSensitive: true }
 ];
 
 let selectedQuestions = [];
-let userAnswers = {};
-let questionStatus = {};
-let attempts = {};
+let questionState = {}; 
 const TOTAL_QUESTIONS = 40;
 const SHEETS_URL = "https://script.google.com/macros/s/AKfycbzZhuEwPkor67-Eym2DK3AW2HO_rkQw72c2QR8VwHK9OlGCjay3rPM9a3NA9t1bubeG/exec";
 
-function shuffle(array) {
-    return array.sort(() => Math.random() - 0.5);
+// Utility to shuffle arrays
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
 }
 
 function startTest() {
@@ -140,184 +242,213 @@ function startTest() {
         alert("Vul eerst je naam in om te beginnen.");
         return;
     }
-    selectedQuestions = shuffle([...rawDatabase]).slice(0, TOTAL_QUESTIONS);
+
+    const s = shuffleArray(rawDatabase.filter(q => q.cat === 'spelling')).slice(0, 15);
+    const w = shuffleArray(rawDatabase.filter(q => q.cat === 'werkwoorden')).slice(0, 15);
+    const i = shuffleArray(rawDatabase.filter(q => q.cat === 'interpunctie')).slice(0, 10);
+    
+    const combined = [...s, ...w, ...i];
+    
+    selectedQuestions = shuffleArray(combined).map(q => {
+        const qCopy = { ...q }; 
+        if (qCopy.type === 'MC') {
+            qCopy.options = shuffleArray([...qCopy.options]); 
+        }
+        return qCopy;
+    });
+    
+    selectedQuestions.forEach((q, idx) => {
+        questionState[idx] = { attempts: 0, status: 'open', cat: q.cat, givenAnswer: "" };
+    });
+
     document.getElementById('start-screen').classList.add('hidden');
     document.getElementById('quiz-screen').classList.remove('hidden');
-    renderQuestions();
     
-    // Start bij de eerste vraag
+    renderAllQuestions();
+    
     setTimeout(() => {
-        const firstCard = document.getElementById('q-card-0');
-        firstCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        document.getElementById('input-0')?.focus();
-    }, 300);
+        const firstCard = document.getElementById('card-0');
+        if(firstCard) firstCard.scrollIntoView({behavior: 'smooth', block: 'center'});
+    }, 500);
 }
 
-function renderQuestions() {
+function renderAllQuestions() {
     const container = document.getElementById('questions-container');
     container.innerHTML = '';
+    
     selectedQuestions.forEach((q, index) => {
         const card = document.createElement('div');
-        card.className = "question-card bg-white p-8 border-2 border-blue-50 rounded-2xl shadow-lg transform transition-all duration-500 max-w-2xl mx-auto";
-        card.id = `q-card-${index}`;
+        card.className = "question-card bg-white p-6 border-2 border-gray-100 rounded-2xl shadow-sm max-w-2xl mx-auto";
+        card.id = `card-${index}`;
 
-        let html = `<div class="flex items-center gap-3 mb-6">
-                        <span class="bg-blue-600 text-white w-10 h-10 flex items-center justify-center rounded-full text-lg font-black shadow-md">${index + 1}</span>
-                        <p class="text-sm font-bold text-gray-400 uppercase tracking-widest">${q.instr}</p>
-                    </div>
-                    <p class="text-2xl text-gray-800 mb-8 leading-relaxed font-semibold">${q.q}</p>`;
+        let content = `<div class="flex justify-between items-center mb-4">
+                        <span class="bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-bold">Vraag ${index + 1}</span>
+                        <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">${q.instr}</span>
+                       </div>
+                       <p class="text-xl font-semibold mb-6 italic text-gray-800">${q.q}</p>`;
 
         if (q.type === "MC") {
-            html += `<div class="grid grid-cols-1 gap-4">`;
-            q.options.forEach(opt => {
-                html += `<button onclick="handleAnswer(${index}, '${opt}')" 
-                           id="opt-${index}-${opt.replace(/[^a-zA-Z0-9]/g, "")}"
-                           class="answer-opt text-left p-4 border-2 border-gray-100 rounded-xl hover:bg-blue-50 hover:border-blue-300 transition-all font-bold text-lg outline-none">
-                           ${opt}
-                         </button>`;
+            content += `<div class="grid grid-cols-1 md:grid-cols-2 gap-3">`;
+            q.options.forEach((opt, optIdx) => {
+                content += `<button id="btn-${index}-opt-${optIdx}" 
+                            onclick="checkAnswer(${index}, '${opt}', 'btn-${index}-opt-${optIdx}')"
+                            class="answer-opt text-left p-4 border-2 border-gray-200 rounded-xl hover:bg-blue-50 font-bold transition-all text-gray-700">
+                            ${opt}
+                            </button>`;
             });
-            html += `</div>`;
+            content += `</div>`;
         } else {
-            html += `<div class="space-y-4">
-                        <input type="text" 
-                            id="input-${index}"
-                            autocomplete="off"
-                            placeholder="Typ je antwoord..."
-                            onkeydown="if(event.key === 'Enter') { event.preventDefault(); handleAnswer(${index}, this.value); }"
-                            class="w-full p-5 border-2 border-gray-100 rounded-xl focus:outline-none text-xl font-bold transition-all text-center">
-                        <button onclick="handleAnswer(${index}, document.getElementById('input-${index}').value)"
-                            id="check-btn-${index}"
-                            class="w-full bg-blue-100 text-blue-700 py-3 rounded-xl font-black hover:bg-blue-600 hover:text-white transition-all uppercase tracking-widest">
-                            Controleer
-                        </button>
-                    </div>`;
+            content += `<div class="flex flex-col sm:flex-row gap-2">
+                            <input type="text" 
+                                id="input-${index}"
+                                placeholder="Typ je antwoord..."
+                                onkeydown="if(event.key === 'Enter') { checkAnswer(${index}); }"
+                                class="flex-grow p-4 border-2 border-gray-200 rounded-xl font-bold text-center focus:outline-none focus:border-blue-400 text-lg">
+                            <button onclick="checkAnswer(${index})"
+                                id="check-btn-${index}"
+                                class="bg-blue-100 text-blue-700 px-6 py-3 rounded-xl font-bold hover:bg-blue-600 hover:text-white transition-all">
+                                Controleer
+                            </button>
+                        </div>`;
         }
 
-        html += `<div id="hint-${index}" class="hint-box mt-6 p-4 bg-yellow-50 text-yellow-800 rounded-xl border-l-4 border-yellow-400 hidden text-sm">
-                    <strong>Hulp:</strong> ${q.hint}
-                 </div>`;
-        
-        card.innerHTML = html;
+        content += `<div id="feedback-${index}" class="mt-4 text-center font-bold text-sm min-h-[20px]"></div>`;
+        content += `<div id="hint-${index}" class="hidden mt-3 p-3 bg-orange-50 text-orange-800 rounded-lg text-sm italic border-l-4 border-orange-400 text-center"></div>`;
+
+        card.innerHTML = content;
         container.appendChild(card);
     });
 }
 
-function handleAnswer(qIndex, val) {
-    if (questionStatus[qIndex]) return;
+function checkAnswer(index, mcVal = null, btnId = null) {
+    const state = questionState[index];
+    if (state.status !== 'open') return;
 
-    const question = selectedQuestions[qIndex];
-    const userVal = val.trim();
-    const normalizedUser = userVal.toLowerCase();
-    const normalizedCorrect = question.correct.toLowerCase();
+    const q = selectedQuestions[index];
+    let userVal = mcVal;
+    
+    if (q.type === 'OPEN') {
+        const inputEl = document.getElementById(`input-${index}`);
+        userVal = inputEl.value.trim();
+        if (!userVal) return;
+    }
 
-    if (normalizedUser === normalizedCorrect && userVal !== "") {
-        userAnswers[qIndex] = userVal;
-        questionStatus[qIndex] = 'Correct';
-        markAsAnswered(qIndex, true);
-        updateUI(qIndex);
-        setTimeout(() => focusNextQuestion(qIndex), 600);
-    } else if (userVal !== "") {
-        attempts[qIndex] = (attempts[qIndex] || 0) + 1;
+    // Check of de vraag case-sensitive is
+    const isSensitive = q.caseSensitive || false;
+    const isCorrect = isSensitive
+        ? userVal.trim() === q.correct.trim()
+        : userVal.trim().toLowerCase() === q.correct.trim().toLowerCase();
+
+    const card = document.getElementById(`card-${index}`);
+    const feedbackEl = document.getElementById(`feedback-${index}`);
+    const hintEl = document.getElementById(`hint-${index}`);
+
+    if (isCorrect) {
+        // GOED
+        state.status = 'correct';
+        state.givenAnswer = userVal;
+        card.classList.remove('status-retry');
+        card.classList.add('status-correct');
+        feedbackEl.innerHTML = `<span class="text-green-700 text-lg pop-in">✅ Helemaal goed!</span>`;
+        hintEl.classList.add('hidden');
         
-        if (attempts[qIndex] === 1) {
-            document.getElementById(`hint-${qIndex}`).classList.remove('hidden');
-            const el = document.getElementById(`input-${qIndex}`);
-            if (el) {
-                el.classList.add('border-orange-400');
-                setTimeout(() => el.classList.remove('border-orange-400'), 1000);
+        if(q.type === "MC") {
+             // Zoek de juiste knop op tekst, want er kunnen meerdere knoppen zijn
+             // Maar we hebben nu unieke IDs per optie, en we weten welke geklikt is via btnId
+             // Echter, als het goed is, willen we DEZE knop groen maken.
+             const btn = document.getElementById(btnId);
+             if(btn) btn.classList.add('bg-green-200', 'border-green-500');
+        }
+        disableInputs(index);
+        
+        setTimeout(() => {
+            scrollToNextQuestion(index);
+        }, 800); 
+
+    } else {
+        // FOUT
+        state.attempts++;
+        
+        if (state.attempts >= 2) {
+            // 2e keer fout
+            state.status = 'failed';
+            state.givenAnswer = userVal;
+            card.classList.remove('status-retry');
+            card.classList.add('status-wrong');
+            feedbackEl.innerHTML = `<span class="text-red-700 pop-in">Helaas! Het goede antwoord was: <span class="text-xl font-black underline decoration-red-400">${q.correct}</span></span>`;
+            hintEl.classList.add('hidden');
+            
+            if(q.type === "MC") {
+                 const btn = document.getElementById(btnId);
+                 if(btn) btn.classList.add('bg-red-200', 'border-red-500');
             }
-        } else if (attempts[qIndex] >= 2) {
-            userAnswers[qIndex] = userVal;
-            questionStatus[qIndex] = 'Fout';
-            autoFillCorrect(qIndex, question.correct);
-            updateUI(qIndex);
-            setTimeout(() => focusNextQuestion(qIndex), 1000);
+            disableInputs(index);
+            
+            setTimeout(() => {
+                scrollToNextQuestion(index);
+            }, 3000);
+            
+        } else {
+            // 1e keer fout
+            card.classList.add('status-retry');
+            feedbackEl.innerHTML = `<span class="text-orange-700 font-bold pop-in">Bijna goed... Probeer het nog eens!</span>`;
+            hintEl.innerHTML = `<strong>Tip:</strong> ${q.hint}`;
+            hintEl.classList.remove('hidden');
+            
+            if(q.type === 'OPEN') {
+                const input = document.getElementById(`input-${index}`);
+                input.value = '';
+                input.focus();
+            } else if (q.type === 'MC') {
+                // Disable alleen de foute knop
+                const btn = document.getElementById(btnId);
+                if(btn) {
+                    btn.classList.add('bg-red-50', 'border-red-300', 'text-red-400', 'cursor-not-allowed', 'opacity-60');
+                    btn.disabled = true;
+                }
+            }
         }
     }
+    updateProgress();
 }
 
-function focusNextQuestion(currentIndex) {
+function scrollToNextQuestion(currentIndex) {
     const nextIndex = currentIndex + 1;
     if (nextIndex < TOTAL_QUESTIONS) {
-        const nextCard = document.getElementById(`q-card-${nextIndex}`);
-        if (nextCard) {
-            // Soepele verticale centrering
-            nextCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            
-            // Focus op het invoerveld
-            setTimeout(() => {
-                const input = document.getElementById(`input-${nextIndex}`);
-                if (input) input.focus();
-            }, 500);
-        }
-    } else {
-        document.getElementById('submit-btn').scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-}
-
-function markAsAnswered(index, isCorrect) {
-    const card = document.getElementById(`q-card-${index}`);
-    card.classList.remove('border-blue-50');
-    
-    if (isCorrect) {
-        card.classList.add('border-green-500', 'bg-green-50', 'shadow-green-100');
-    } else {
-        card.classList.add('border-red-500', 'bg-red-50', 'shadow-red-100');
-    }
-    
-    const elements = card.querySelectorAll('input, button');
-    elements.forEach(el => el.disabled = true);
-    
-    const checkBtn = document.getElementById(`check-btn-${index}`);
-    if (checkBtn) {
-        checkBtn.innerText = isCorrect ? "GOED" : "FOUT";
-        checkBtn.className = isCorrect 
-            ? "w-full bg-green-500 text-white py-3 rounded-xl font-black uppercase tracking-widest" 
-            : "w-full bg-red-500 text-white py-3 rounded-xl font-black uppercase tracking-widest";
-    }
-}
-
-function autoFillCorrect(index, correctVal) {
-    const card = document.getElementById(`q-card-${index}`);
-    const input = document.getElementById(`input-${index}`);
-    
-    if (input) {
-        input.classList.add('wrong-answer-fill');
-        const feedback = document.createElement('div');
-        feedback.className = "mt-4 text-green-700 font-black text-center bg-white p-3 rounded-lg border-2 border-green-200 animate-pulse";
-        feedback.innerText = `JUISTE ANTWOORD: ${correctVal}`;
-        input.parentElement.appendChild(feedback);
-    } else {
-        const buttons = card.querySelectorAll('.answer-opt');
-        buttons.forEach(btn => {
-            if (btn.innerText === correctVal) {
-                btn.classList.add('bg-green-500', 'text-white', 'border-green-600', 'scale-105');
-            } else {
-                btn.classList.add('opacity-30', 'grayscale');
+        const nextCard = document.getElementById(`card-${nextIndex}`);
+        if(nextCard) {
+            nextCard.scrollIntoView({behavior: 'smooth', block: 'center'});
+            const nextQ = selectedQuestions[nextIndex];
+            if(nextQ.type === 'OPEN') {
+                setTimeout(() => document.getElementById(`input-${nextIndex}`)?.focus(), 500);
             }
-        });
+        }
     }
-    markAsAnswered(index, false);
 }
 
-function updateUI(qIndex) {
-    const count = Object.keys(questionStatus).length;
-    const perc = (count / TOTAL_QUESTIONS) * 100;
+function disableInputs(index) {
+    const card = document.getElementById(`card-${index}`);
+    const inputs = card.querySelectorAll('input, button');
+    inputs.forEach(el => el.disabled = true);
+}
+
+function updateProgress() {
+    const answered = Object.values(questionState).filter(s => s.status !== 'open').length;
+    const perc = (answered / TOTAL_QUESTIONS) * 100;
     document.getElementById('progress-bar').style.width = perc + '%';
-    document.getElementById('progress-text').innerText = `${count} / ${TOTAL_QUESTIONS}`;
-}
-
-function calculateScore() {
-    return Object.values(questionStatus).filter(s => s === 'Correct').length;
+    document.getElementById('progress-text').innerText = `${answered} / ${TOTAL_QUESTIONS}`;
 }
 
 function validateAndSubmit() {
-    const answered = Object.keys(questionStatus).length;
+    const answered = Object.values(questionState).filter(s => s.status !== 'open').length;
     if (answered < TOTAL_QUESTIONS) {
         const msg = document.getElementById('validation-msg');
-        msg.innerText = `Je hebt nog niet alle vragen beantwoord (${answered}/${TOTAL_QUESTIONS}). Maak de toets eerst af.`;
+        msg.innerText = `Je bent nog niet klaar! Je hebt ${answered} van de 40 vragen gemaakt.`;
         msg.classList.remove('hidden');
-        msg.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const firstOpenIndex = Object.keys(questionState).find(k => questionState[k].status === 'open');
+        if(firstOpenIndex) {
+            document.getElementById(`card-${firstOpenIndex}`).scrollIntoView({behavior: 'smooth', block: 'center'});
+        }
         return;
     }
     submitToSheets();
@@ -325,21 +456,30 @@ function validateAndSubmit() {
 
 async function submitToSheets() {
     const btn = document.getElementById('submit-btn');
+    btn.innerText = "Bezig met verzenden...";
     btn.disabled = true;
-    btn.innerText = "BEZIG MET OPSLAAN...";
+
+    const stats = { spelling: {c: 0, t: 15}, werkwoorden: {c: 0, t: 15}, interpunctie: {c: 0, t: 10} };
+    Object.values(questionState).forEach(s => {
+        if (s.status === 'correct') stats[s.cat].c++;
+    });
     
+    // Leesbaar rapport
+    const detailsLog = selectedQuestions.map((q, i) => {
+        const state = questionState[i];
+        if (state.status === 'correct') return null; 
+        return `Vraag ${i + 1}: FOUT. Gegeven: '${state.givenAnswer}', Correct: '${q.correct}'. Vraag: ${q.q}`;
+    }).filter(item => item !== null).join('\n');
+
+    const scoreTotal = Object.values(questionState).filter(s => s.status === 'correct').length;
     const studentName = document.getElementById('student-name').value;
-    const scoreValue = calculateScore();
-    
-    const report = selectedQuestions.map((q, i) => {
-        return `V${i+1}: ${questionStatus[i]} (${userAnswers[i] || '-'})`;
-    }).join(' | ');
 
     const data = {
         naam: studentName,
         datum: new Date().toLocaleString(),
-        score: `${scoreValue}/${TOTAL_QUESTIONS}`,
-        details: report
+        score: `${scoreTotal}/${TOTAL_QUESTIONS}`,
+        fouten_rapport: detailsLog || "Geen fouten gemaakt!", // Leesbare string
+        categorie_stats: JSON.stringify(stats)
     };
 
     try {
@@ -349,18 +489,49 @@ async function submitToSheets() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         });
-        showFinalResults(scoreValue);
-    } catch (e) {
-        showFinalResults(scoreValue);
-    }
+    } catch (e) { console.log(e); }
+    
+    showResults();
 }
 
-function showFinalResults(score) {
+function showResults() {
     document.getElementById('quiz-screen').classList.add('hidden');
     document.getElementById('result-screen').classList.remove('hidden');
     document.getElementById('display-name').innerText = document.getElementById('student-name').value;
-    document.getElementById('final-score').innerText = `${score} / ${TOTAL_QUESTIONS}`;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    const stats = { spelling: {c: 0, t: 15}, werkwoorden: {c: 0, t: 15}, interpunctie: {c: 0, t: 10} };
+    Object.values(questionState).forEach(s => {
+        if (s.status === 'correct') stats[s.cat].c++;
+    });
+
+    for (let c in stats) {
+        const p = (stats[c].c / stats[c].t) * 100;
+        document.getElementById(`score-${c}`).innerText = `${stats[c].c} / ${stats[c].t}`;
+        document.getElementById(`bar-${c}`).style.width = p + '%';
+    }
+
+    const sorted = Object.entries(stats).sort((a,b) => (a[1].c/a[1].t) - (b[1].c/b[1].t));
+    const worst = sorted[0];
+    const best = sorted[2];
+    
+    const labelMap = {spelling: 'Spelling', werkwoorden: 'Werkwoordspelling', interpunctie: 'Interpunctie'};
+    const tipsMap = {
+        spelling: "Probeer extra te oefenen met woorden die eindigen op -cht of -g (zoals 'lucht' vs 'legt') en met meervouden ('s of -en).",
+        werkwoorden: "Kijk goed naar de stam+t regel en het kofschip voor de verleden tijd. Oefen met sterke werkwoorden!",
+        interpunctie: "Let goed op hoofdletters bij namen en landen, en vergeet de aanhalingstekens niet bij een citaat."
+    };
+
+    document.getElementById('compliment-text').innerHTML = `Goed gedaan! Je bent al heel sterk in <strong>${labelMap[best[0]]}</strong>!`;
+    
+    if (worst[1].c / worst[1].t < 0.8) {
+        const categoryName = labelMap[worst[0]];
+        const specificTip = tipsMap[worst[0]];
+        document.getElementById('tip-text').innerHTML = `Je kunt nog wat punten pakken bij <strong>${categoryName}</strong>.<br>${specificTip}`;
+    } else {
+        document.getElementById('tip-text').innerText = "Wauw! Je beheerst alle onderdelen al super goed. Je bent klaar voor de echte toets!";
+    }
+    
+    window.scrollTo({top: 0, behavior: 'smooth'});
 }
 </script>
 </body>
